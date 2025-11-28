@@ -6,3 +6,6 @@ class Admin(Base):
 
     login: Mapped[str] = mapped_column(unique=True, index=True)
     password: Mapped[str]
+
+    def __repr__(self):
+        return f"<Admin(login='{self.login}')>"
