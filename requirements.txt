@@ -1,0 +1,17 @@
+﻿fastapi
+uvicorn[standard]
+sqlalchemy[asyncio]
+asyncpg
+passlib[argon2]
+pyjwt
+pydantic
+pydantic-settings
+alembic
+psycopg2
+pytest
+pytest-asyncio
+httpx
+Pillow
+python-multipart
+structlog
+
