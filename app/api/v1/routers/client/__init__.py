@@ -1,6 +1,13 @@
-from typing import Annotated
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
-all_routers = APIRouter(prefix="/api/v1")
+from app.api.v1.routers.client.settings import router as settings_router
+from app.api.v1.routers.client.contact_form import router as contact_form_router
+from app.api.v1.routers.client.faq import router as faq_router
 
 
+client_routers = APIRouter()
+
+
+client_routers.include_router(settings_router, prefix="/settings", tags=["Settings"])
+client_routers.include_router(contact_form_router, prefix="/contact", tags=["Contact Form"])
+client_routers.include_router(faq_router, prefix="/faq", tags=["FAQ"])

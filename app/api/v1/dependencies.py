@@ -35,3 +35,21 @@ async def get_current_admin_dependency(
     token = auth_scheme.credentials if auth_scheme else None
     token_data = await auth_service.verify_token(token)
     return await auth_service.check_user_exist(token_data)
+
+
+async def get_settings_service(session=Depends(get_db_session)) -> services.SettingsService:
+    return services.SettingsService(
+        repository=repositories.SettingsRepository(session=session)
+    )
+
+
+async def get_contact_form_service(session=Depends(get_db_session)) -> services.ContactFormService:
+    return services.ContactFormService(
+        repository=repositories.ContactFormRepository(session=session)
+    )
+
+
+async def get_faq_service(session=Depends(get_db_session)) -> services.FAQService:
+    return services.FAQService(
+        repository=repositories.FAQRepository(session=session)
+    )

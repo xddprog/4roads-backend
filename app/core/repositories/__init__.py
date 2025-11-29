@@ -1,1 +1,4 @@
 from app.core.repositories.admin_repository import AdminRepository
+from app.core.repositories.settings_repository import SettingsRepository
+from app.core.repositories.contact_form_repository import ContactFormRepository
+from app.core.repositories.faq_repository import FAQRepository

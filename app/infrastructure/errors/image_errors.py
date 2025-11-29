@@ -1,42 +1,56 @@
 from fastapi import HTTPException, status
 
 
-class ImageError(HTTPException):
-    """Базовая ошибка для работы с изображениями"""
-    def __init__(self, detail: str):
-        super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
-
-
-class InvalidImageType(ImageError):
-    """Неверный тип файла"""
+class InvalidImageType(HTTPException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    detail = "Файл должен быть изображением"
+    
     def __init__(self):
-        super().__init__(detail="Файл должен быть изображением")
+        super().__init__(
+            status_code=self.status_code,
+            detail=self.detail
+        )
 
 
-class InvalidImageFormat(ImageError):
-    """Неподдерживаемый формат изображения"""
+class InvalidImageFormat(HTTPException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    detail = "Неподдерживаемый формат изображения"
+    
     def __init__(self, allowed_formats: str):
         super().__init__(
+            status_code=self.status_code,
             detail=f"Неподдерживаемый формат. Разрешены: {allowed_formats}"
         )
 
 
-class ImageTooLarge(ImageError):
-    """Файл слишком большой"""
+class ImageTooLarge(HTTPException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    detail = "Файл слишком большой"
+    
     def __init__(self, max_size_mb: int):
         super().__init__(
+            status_code=self.status_code,
             detail=f"Файл слишком большой. Максимальный размер: {max_size_mb}MB"
         )
 
 
-class EmptyImageFile(ImageError):
-    """Пустой файл"""
+class EmptyImageFile(HTTPException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    detail = "Файл пустой"
+    
     def __init__(self):
-        super().__init__(detail="Файл пустой")
+        super().__init__(
+            status_code=self.status_code,
+            detail=self.detail
+        )
 
 
-class ImageProcessingError(ImageError):
-    """Ошибка обработки изображения"""
+class ImageProcessingError(HTTPException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    detail = "Ошибка обработки изображения"
+    
     def __init__(self, error_message: str):
-        super().__init__(detail=f"Не удалось обработать изображение: {error_message}")
-
+        super().__init__(
+            status_code=self.status_code,
+            detail=f"Не удалось обработать изображение: {error_message}"
+        )

@@ -2,12 +2,15 @@ import time
 import uuid
 from typing import Callable
 from fastapi import Request, Response
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 import structlog
 
 from app.infrastructure.logging.logger import get_logger
 from app.infrastructure.config.config import APP_CONFIG
+from app.infrastructure.errors.base import InternalServerError
+
 
 
 logger = get_logger(__name__)
@@ -59,5 +62,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 error=str(exc),
                 exc_info=True,
             )
-            raise
-
+            return JSONResponse(
+                status_code=InternalServerError.status_code, 
+                content={"detail": InternalServerError.detail}
+            )
