@@ -9,6 +9,5 @@ class ContactFormService:
         self.repository = repository
     
     async def create_contact_form(self, data: ContactFormCreateModel) -> ContactFormModel:
-        contact_form = ContactForm(**data.model_dump())
-        created = await self.repository.add_item(contact_form)
+        created = await self.repository.add_item(**data.model_dump())
         return ContactFormModel.model_validate(created, from_attributes=True)

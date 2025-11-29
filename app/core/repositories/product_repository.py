@@ -61,3 +61,15 @@ class ProductRepository(SqlAlchemyRepository[Product]):
         
         result = await self.session.execute(query)
         return list(result.scalars().unique().all())
+
+    async def get_by_slug(self, slug: str) -> Product | None:
+        query = (
+            select(Product)
+            .options(
+                selectinload(Product.images),
+                selectinload(Product.characteristics)
+            )
+            .where(Product.slug == slug)
+        )
+        result = await self.session.execute(query)
+        return result.scalars().one_or_none()

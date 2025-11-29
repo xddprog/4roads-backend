@@ -11,7 +11,7 @@ class ProductService:
         self.repository = repository
     
     async def get_by_slug(self, slug: str) -> ProductModel:
-        product = await self.repository.get_by_filter(slug=slug)
+        product = await self.repository.get_by_slug(slug)
         if not product:
             raise NotFoundError(f"Продукт с slug '{slug}' не найден")
         return ProductModel.model_validate(product, from_attributes=True)

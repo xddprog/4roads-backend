@@ -132,8 +132,8 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 10900,
             "is_active": True,
             "is_featured": True,
-            "characteristics": {"brand": "4Roads", "size": "L", "material": "Поликарбонат", "color": "Темно-синий", "weight": "4.2 кг"},
-            "images": ["products/chemodan-8802-siniy.webp"]
+            "characteristics": {"size": "L", "material": "Поликарбонат", "color": "Темно-синий", "weight": "4.2 кг"},
+            "images": ["test_image.jpg"]
         },
         {
             "category": "chemodany",
@@ -144,8 +144,8 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 10900,
             "is_active": True,
             "is_featured": True,
-            "characteristics": {"brand": "4Roads", "size": "L", "material": "Поликарбонат", "color": "Пурпурный", "weight": "4.2 кг"},
-            "images": ["products/chemodan-8802-purple.webp"]
+            "characteristics": {"size": "L", "material": "Поликарбонат", "color": "Пурпурный", "weight": "4.2 кг"},
+            "images": ["test_image.jpg"]
         },
         {
             "category": "chemodany",
@@ -156,8 +156,8 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 13900,
             "is_active": True,
             "is_featured": True,
-            "characteristics": {"brand": "Travel Case", "size": "L", "material": "ABS-пластик", "color": "Вишневый", "weight": "3.8 кг"},
-            "images": ["products/chemodan-8103-cherry.webp"]
+            "characteristics": {"size": "L", "material": "ABS-пластик", "color": "Вишневый", "weight": "3.8 кг"},
+            "images": ["test_image.jpg"]
         },
         {
             "category": "chemodany",
@@ -168,8 +168,8 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 13900,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"brand": "Travel Case", "size": "L", "material": "ABS-пластик", "color": "Серый", "weight": "3.8 кг"},
-            "images": ["products/chemodan-8103-grey.webp"]
+            "characteristics": {"size": "L", "material": "ABS-пластик", "color": "Серый", "weight": "3.8 кг"},
+            "images": ["test_image.jpg"]
         },
         {
             "category": "chemodany",
@@ -180,8 +180,8 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 6500,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"brand": "4Roads", "size": "S", "material": "Полипропилен", "color": "Коралловый", "weight": "2.5 кг"},
-            "images": ["products/chemodan-8001-coral.webp"]
+            "characteristics": {"size": "S", "material": "Полипропилен", "color": "Коралловый", "weight": "2.5 кг"},
+            "images": ["test_image.jpg"]
         },
         {
             "category": "chemodany",
@@ -192,8 +192,8 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 7900,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"brand": "Travel Case", "size": "M", "material": "Полиэстер", "color": "Черный", "weight": "3.2 кг"},
-            "images": ["products/chemodan-p02-black.webp"]
+            "characteristics": {"size": "M", "material": "Полиэстер", "color": "Черный", "weight": "3.2 кг"},
+            "images": ["test_image.jpg"]
         },
         {
             "category": "chemodany",
@@ -204,8 +204,8 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 9900,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"brand": "Travel Case", "size": "L", "material": "Полиэстер", "color": "Темно-синий", "weight": "3.9 кг"},
-            "images": ["products/chemodan-p02-navy.webp"]
+            "characteristics": {"size": "L", "material": "Полиэстер", "color": "Темно-синий", "weight": "3.9 кг"},
+            "images": ["test_image.jpg"]
         },
         {
             "category": "chemodany",
@@ -216,8 +216,8 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 9900,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"brand": "Travel Case", "size": "L", "material": "Полиэстер", "color": "Красный", "weight": "3.9 кг"},
-            "images": ["products/chemodan-p02-red.webp"]
+            "characteristics": {"size": "L", "material": "Полиэстер", "color": "Красный", "weight": "3.9 кг"},
+            "images": ["test_image.jpg"]
         },
         {
             "category": "chemodany",
@@ -228,8 +228,8 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 9900,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"brand": "Travel Case", "size": "L", "material": "Полиэстер", "color": "Голубой", "weight": "3.9 кг"},
-            "images": ["products/chemodan-p02-blue.webp"]
+            "characteristics": {"size": "L", "material": "Полиэстер", "color": "Голубой", "weight": "3.9 кг"},
+            "images": ["test_image.jpg"]
         },
         {
             "category": "chemodany",
@@ -240,8 +240,8 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 9900,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"brand": "Travel Case", "size": "L", "material": "Полиэстер", "color": "Бордовый", "weight": "3.9 кг"},
-            "images": ["products/chemodan-p02-bordo.webp"]
+            "characteristics": {"size": "L", "material": "Полиэстер", "color": "Бордовый", "weight": "3.9 кг"},
+            "images": ["test_image.jpg"]
         },
         {
             "category": "chemodany",
@@ -252,8 +252,8 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 12900,
             "is_active": True,
             "is_featured": True,
-            "characteristics": {"brand": "4Roads", "size": "M", "material": "Поликарбонат", "color": "Золотой", "weight": "3.5 кг"},
-            "images": ["products/chemodan-5501-gold.webp"]
+            "characteristics": {"size": "M", "material": "Поликарбонат", "color": "Золотой", "weight": "3.5 кг"},
+            "images": ["test_image.jpg"]
         },
         {
             "category": "chemodany",
@@ -264,8 +264,8 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 5900,
             "is_active": False,
             "is_featured": False,
-            "characteristics": {"brand": "4Roads", "size": "S", "material": "ABS-пластик", "color": "Розовый", "weight": "2.3 кг"},
-            "images": ["products/chemodan-7702-pink.webp"]
+            "characteristics": {"size": "S", "material": "ABS-пластик", "color": "Розовый", "weight": "2.3 кг"},
+            "images": ["test_image.jpg"]
         },
         
         # Сумки (8 продуктов)
@@ -279,7 +279,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "is_active": True,
             "is_featured": True,
             "characteristics": {"brand": "4Roads", "volume": "65 литров", "material": "Полиэстер", "color": "Черный"},
-            "images": ["products/sumka-dorozhnaya-black.webp"]
+            "images": ["test_image.jpg"]
         },
         {
             "category": "sumki",
@@ -291,7 +291,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "is_active": True,
             "is_featured": False,
             "characteristics": {"brand": "Travel Case", "volume": "80 литров", "material": "Полиэстер", "color": "Синий"},
-            "images": ["products/sumka-dorozhnaya-blue.webp"]
+            "images": ["test_image.jpg"]
         },
         {
             "category": "sumki",
@@ -303,7 +303,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "is_active": True,
             "is_featured": False,
             "characteristics": {"brand": "4Roads", "material": "Полиэстер", "color": "Розовый"},
-            "images": ["products/beauty-case-pink.webp"]
+            "images": ["test_image.jpg"]
         },
         {
             "category": "sumki",
@@ -315,7 +315,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "is_active": True,
             "is_featured": False,
             "characteristics": {"brand": "Travel Case", "volume": "45 литров", "material": "Нейлон", "color": "Серый"},
-            "images": ["products/sport-bag-grey.webp"]
+            "images": ["test_image.jpg"]
         },
         {
             "category": "sumki",
@@ -327,7 +327,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "is_active": True,
             "is_featured": False,
             "characteristics": {"brand": "4Roads", "material": "Кожзам", "color": "Черный"},
-            "images": ["products/doc-bag-black.webp"]
+            "images": ["test_image.jpg"]
         },
         {
             "category": "sumki",
@@ -339,7 +339,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "is_active": True,
             "is_featured": False,
             "characteristics": {"brand": "Travel Case", "material": "Нейлон", "color": "Хаки"},
-            "images": ["products/waist-bag-khaki.webp"]
+            "images": ["test_image.jpg"]
         },
         {
             "category": "sumki",
@@ -351,7 +351,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "is_active": True,
             "is_featured": False,
             "characteristics": {"brand": "4Roads", "material": "Полиэстер", "color": "Синий"},
-            "images": ["products/messenger-bag-blue.webp"]
+            "images": ["test_image.jpg"]
         },
         {
             "category": "sumki",
@@ -363,7 +363,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "is_active": False,
             "is_featured": False,
             "characteristics": {"brand": "Travel Case", "volume": "40 литров", "material": "Нейлон", "color": "Черный"},
-            "images": ["products/foldable-bag.webp"]
+            "images": ["test_image.jpg"]
         },
         
         # Рюкзаки (4 продукта)
@@ -377,7 +377,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "is_active": True,
             "is_featured": True,
             "characteristics": {"brand": "4Roads", "volume": "35 литров", "material": "Полиэстер", "color": "Черный"},
-            "images": ["products/backpack-wheels-black.webp"]
+            "images": ["test_image.jpg"]
         },
         {
             "category": "ryukzaki",
@@ -389,7 +389,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "is_active": True,
             "is_featured": False,
             "characteristics": {"brand": "Travel Case", "volume": "45 литров", "material": "Полиэстер", "color": "Синий"},
-            "images": ["products/backpack-wheels-blue.webp"]
+            "images": ["test_image.jpg"]
         },
         {
             "category": "ryukzaki",
@@ -401,7 +401,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "is_active": True,
             "is_featured": False,
             "characteristics": {"brand": "4Roads", "volume": "25 литров", "material": "Полиэстер", "color": "Серый"},
-            "images": ["products/city-backpack-grey.webp"]
+            "images": ["test_image.jpg"]
         },
         {
             "category": "ryukzaki",
@@ -413,7 +413,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "is_active": True,
             "is_featured": False,
             "characteristics": {"brand": "Travel Case", "volume": "55 литров", "material": "Нейлон", "color": "Зеленый"},
-            "images": ["products/hiking-backpack-green.webp"]
+            "images": ["test_image.jpg"]
         },
         
         # Кейс-пилоты (4 продукта)
@@ -427,7 +427,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "is_active": True,
             "is_featured": True,
             "characteristics": {"brand": "4Roads", "material": "Поликарбонат", "color": "Черный", "weight": "2.8 кг"},
-            "images": ["products/pilot-case-black.webp"]
+            "images": ["test_image.jpg"]
         },
         {
             "category": "keys-piloty",
@@ -439,7 +439,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "is_active": True,
             "is_featured": False,
             "characteristics": {"brand": "Travel Case", "material": "Кожзам", "color": "Коричневый", "weight": "3.1 кг"},
-            "images": ["products/pilot-case-brown.webp"]
+            "images": ["test_image.jpg"]
         },
         {
             "category": "keys-piloty",
@@ -451,7 +451,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "is_active": True,
             "is_featured": False,
             "characteristics": {"brand": "4Roads", "material": "ABS-пластик", "color": "Серый", "weight": "2.4 кг"},
-            "images": ["products/pilot-case-grey.webp"]
+            "images": ["test_image.jpg"]
         },
         {
             "category": "keys-piloty",
@@ -463,7 +463,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "is_active": True,
             "is_featured": False,
             "characteristics": {"brand": "Travel Case", "material": "Полипропилен", "color": "Синий", "weight": "3.0 кг"},
-            "images": ["products/pilot-case-blue.webp"]
+            "images": ["test_image.jpg"]
         },
         
         # Аксессуары (2 продукта)
@@ -476,8 +476,8 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 1200,
             "is_active": True,
             "is_featured": True,
-            "characteristics": {"brand": "4Roads", "size": "L", "material": "Спандекс", "color": "Черный"},
-            "images": ["products/cover-l-black.webp"]
+            "characteristics": {"size": "L", "material": "Спандекс", "color": "Черный"},
+            "images": ["test_image.jpg"]
         },
         {
             "category": "aksessuary",
@@ -489,7 +489,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "is_active": True,
             "is_featured": False,
             "characteristics": {"brand": "Travel Case", "size": "M", "material": "Спандекс", "color": "Серый"},
-            "images": ["products/cover-m-grey.webp"]
+            "images": ["test_image.jpg"]
         },
     ]
     
@@ -559,7 +559,7 @@ async def init_reviews(session: AsyncSession) -> None:
             "author_name": "Дмитрий Петров",
             "content": "Хороший чемодан за свои деньги. Брал в командировку, всё поместилось. Единственный минус - замок туговат, но это не критично. В целом доволен покупкой.",
             "rating": 4,
-            "image": "reviews/review-1.webp",
+            "image": "test_image.jpg",
             "is_active": True,
             "product_id": products[0].id
         },

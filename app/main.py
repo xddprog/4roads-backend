@@ -1,8 +1,10 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.routers import api_v1_routers
 from app.infrastructure.database.adapters.pg_connection import DatabaseConnection
@@ -46,5 +48,13 @@ app.add_middleware(
 )
 
 app.add_middleware(LoggingMiddleware)
+
+static_dir = Path(APP_CONFIG.STATIC_DIR)
+if not static_dir.exists():
+    static_dir.mkdir(parents=True, exist_ok=True)
+    logger.info("static_directory_created", path=str(static_dir))
+
+app.mount("/static", StaticFiles(directory=APP_CONFIG.STATIC_DIR), name="static")
+logger.info("static_files_mounted", directory=APP_CONFIG.STATIC_DIR)
 
 app.include_router(api_v1_routers)

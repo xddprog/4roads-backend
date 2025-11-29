@@ -1,12 +1,19 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from uuid import UUID
 from datetime import datetime
+
+from app.utils.url_helper import get_absolute_url
 
 
 class ProductImageModel(BaseModel):
     id: UUID
     image_path: str
     order: int
+    
+    @field_validator("image_path")
+    @classmethod
+    def validate_image_path(cls, value: str) -> str:
+        return get_absolute_url(value)
 
 
 class ProductCharacteristicModel(BaseModel):
