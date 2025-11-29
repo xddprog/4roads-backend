@@ -17,9 +17,8 @@ class ProductImageModel(BaseModel):
 
 
 class ProductCharacteristicModel(BaseModel):
-    id: UUID
+    name: str
     value: str
-    characteristic_type_id: UUID
 
 
 class ProductModel(BaseModel):
@@ -44,7 +43,8 @@ class BaseProductModel(BaseModel):
 
 
 class ProductFilterModel(BaseModel):
-    """Модель для фильтрации продуктов"""
+    price_min: int | None = Field(None, description="Минимальная цена")
+    price_max: int | None = Field(None, description="Максимальная цена")
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
@@ -66,5 +66,5 @@ class ProductFilterModel(BaseModel):
     )
     limit: int = 20
     offset: int = 0
-
+    category_ids: list[UUID] | None = Field(None, description="Фильтр по id категорий")
     

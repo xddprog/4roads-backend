@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Query
 
 from app.api.v1.dependencies import get_product_service
 from app.core.dto.product import ProductModel, ProductFilterModel, BaseProductModel
@@ -7,6 +7,22 @@ from app.core.services.product_service import ProductService
 
 
 router = APIRouter()
+
+
+@router.get(
+    "/home",
+    response_model=list[ProductModel],
+    summary="Получить товары для главной страницы",
+    description="Возвращает товары: новинки, рекомендуемые или скидки. Без флагов - просто первые товары"
+)
+async def get_home_products(
+    service: Annotated[ProductService, Depends(get_product_service)],
+    is_new: bool = Query(False, description="Новинки (последние добавленные)"),
+    is_featured: bool = Query(False, description="Рекомендуемые (хиты продаж)"),
+    is_sales: bool = Query(False, description="Скидки (товары с old_price)"),
+    limit: int = Query(9, ge=1, le=50, description="Количество товаров")
+) -> list[ProductModel]:
+    return await service.get_for_home(is_new, is_featured, is_sales, limit)
 
 
 @router.post(

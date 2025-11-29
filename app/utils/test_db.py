@@ -1,6 +1,5 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from passlib.context import CryptContext
 
 from app.infrastructure.database.models.settings import Settings
 from app.infrastructure.database.models.category import Category
@@ -52,12 +51,9 @@ async def init_characteristic_types(session: AsyncSession) -> None:
         return
     
     characteristic_types = [
-        CharacteristicType(name=CharacteristicTypeEnum.SIZE, slug="size"),
-        CharacteristicType(name=CharacteristicTypeEnum.MATERIAL, slug="material"),
-        CharacteristicType(name=CharacteristicTypeEnum.WEIGHT, slug="weight"),
-        CharacteristicType(name=CharacteristicTypeEnum.VOLUME, slug="volume"),
-        CharacteristicType(name=CharacteristicTypeEnum.COLOR, slug="color"),
-        CharacteristicType(name=CharacteristicTypeEnum.BRAND, slug="brand"),
+        CharacteristicType(name=CharacteristicTypeEnum.SIZE.value, slug="size"),
+        CharacteristicType(name=CharacteristicTypeEnum.MATERIAL.value, slug="material"),
+        CharacteristicType(name=CharacteristicTypeEnum.COLOR.value, slug="color"),
     ]
     
     session.add_all(characteristic_types)
@@ -132,7 +128,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 10900,
             "is_active": True,
             "is_featured": True,
-            "characteristics": {"size": "L", "material": "Поликарбонат", "color": "Темно-синий", "weight": "4.2 кг"},
+            "characteristics": {"size": "L", "material": "Поликарбонат", "color": "Темно-синий"},
             "images": ["test_image.jpg"]
         },
         {
@@ -144,7 +140,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 10900,
             "is_active": True,
             "is_featured": True,
-            "characteristics": {"size": "L", "material": "Поликарбонат", "color": "Пурпурный", "weight": "4.2 кг"},
+            "characteristics": {"size": "L", "material": "Поликарбонат", "color": "Пурпурный"},
             "images": ["test_image.jpg"]
         },
         {
@@ -156,7 +152,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 13900,
             "is_active": True,
             "is_featured": True,
-            "characteristics": {"size": "L", "material": "ABS-пластик", "color": "Вишневый", "weight": "3.8 кг"},
+            "characteristics": {"size": "L", "material": "ABS-пластик", "color": "Вишневый"},
             "images": ["test_image.jpg"]
         },
         {
@@ -168,7 +164,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 13900,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"size": "L", "material": "ABS-пластик", "color": "Серый", "weight": "3.8 кг"},
+            "characteristics": {"size": "L", "material": "ABS-пластик", "color": "Серый"},
             "images": ["test_image.jpg"]
         },
         {
@@ -180,7 +176,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 6500,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"size": "S", "material": "Полипропилен", "color": "Коралловый", "weight": "2.5 кг"},
+            "characteristics": {"size": "S", "material": "Полипропилен", "color": "Коралловый"},
             "images": ["test_image.jpg"]
         },
         {
@@ -192,7 +188,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 7900,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"size": "M", "material": "Полиэстер", "color": "Черный", "weight": "3.2 кг"},
+            "characteristics": {"size": "M", "material": "Полиэстер", "color": "Черный"},
             "images": ["test_image.jpg"]
         },
         {
@@ -204,7 +200,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 9900,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"size": "L", "material": "Полиэстер", "color": "Темно-синий", "weight": "3.9 кг"},
+            "characteristics": {"size": "L", "material": "Полиэстер", "color": "Темно-синий"},
             "images": ["test_image.jpg"]
         },
         {
@@ -216,7 +212,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 9900,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"size": "L", "material": "Полиэстер", "color": "Красный", "weight": "3.9 кг"},
+            "characteristics": {"size": "L", "material": "Полиэстер", "color": "Красный"},
             "images": ["test_image.jpg"]
         },
         {
@@ -228,7 +224,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 9900,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"size": "L", "material": "Полиэстер", "color": "Голубой", "weight": "3.9 кг"},
+            "characteristics": {"size": "L", "material": "Полиэстер", "color": "Голубой"},
             "images": ["test_image.jpg"]
         },
         {
@@ -240,7 +236,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 9900,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"size": "L", "material": "Полиэстер", "color": "Бордовый", "weight": "3.9 кг"},
+            "characteristics": {"size": "L", "material": "Полиэстер", "color": "Бордовый"},
             "images": ["test_image.jpg"]
         },
         {
@@ -252,7 +248,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 12900,
             "is_active": True,
             "is_featured": True,
-            "characteristics": {"size": "M", "material": "Поликарбонат", "color": "Золотой", "weight": "3.5 кг"},
+            "characteristics": {"size": "M", "material": "Поликарбонат", "color": "Золотой"},
             "images": ["test_image.jpg"]
         },
         {
@@ -264,7 +260,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 5900,
             "is_active": False,
             "is_featured": False,
-            "characteristics": {"size": "S", "material": "ABS-пластик", "color": "Розовый", "weight": "2.3 кг"},
+            "characteristics": {"size": "S", "material": "ABS-пластик", "color": "Розовый"},
             "images": ["test_image.jpg"]
         },
         
@@ -278,7 +274,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 4800,
             "is_active": True,
             "is_featured": True,
-            "characteristics": {"brand": "4Roads", "volume": "65 литров", "material": "Полиэстер", "color": "Черный"},
+            "characteristics": {"material": "Полиэстер", "color": "Черный"},
             "images": ["test_image.jpg"]
         },
         {
@@ -290,7 +286,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": None,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"brand": "Travel Case", "volume": "80 литров", "material": "Полиэстер", "color": "Синий"},
+            "characteristics": {"material": "Полиэстер", "color": "Синий"},
             "images": ["test_image.jpg"]
         },
         {
@@ -302,7 +298,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 2400,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"brand": "4Roads", "material": "Полиэстер", "color": "Розовый"},
+            "characteristics": {"material": "Полиэстер", "color": "Розовый"},
             "images": ["test_image.jpg"]
         },
         {
@@ -314,7 +310,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": None,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"brand": "Travel Case", "volume": "45 литров", "material": "Нейлон", "color": "Серый"},
+            "characteristics": {"material": "Нейлон", "color": "Серый"},
             "images": ["test_image.jpg"]
         },
         {
@@ -326,7 +322,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 3500,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"brand": "4Roads", "material": "Кожзам", "color": "Черный"},
+            "characteristics": {"material": "Кожзам", "color": "Черный"},
             "images": ["test_image.jpg"]
         },
         {
@@ -338,7 +334,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": None,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"brand": "Travel Case", "material": "Нейлон", "color": "Хаки"},
+            "characteristics": {"material": "Нейлон", "color": "Хаки"},
             "images": ["test_image.jpg"]
         },
         {
@@ -350,7 +346,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 2200,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"brand": "4Roads", "material": "Полиэстер", "color": "Синий"},
+            "characteristics": {"material": "Полиэстер", "color": "Синий"},
             "images": ["test_image.jpg"]
         },
         {
@@ -362,7 +358,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": None,
             "is_active": False,
             "is_featured": False,
-            "characteristics": {"brand": "Travel Case", "volume": "40 литров", "material": "Нейлон", "color": "Черный"},
+            "characteristics": {"material": "Нейлон", "color": "Черный"},
             "images": ["test_image.jpg"]
         },
         
@@ -376,7 +372,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 5800,
             "is_active": True,
             "is_featured": True,
-            "characteristics": {"brand": "4Roads", "volume": "35 литров", "material": "Полиэстер", "color": "Черный"},
+            "characteristics": {"material": "Полиэстер", "color": "Черный"},
             "images": ["test_image.jpg"]
         },
         {
@@ -388,7 +384,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": None,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"brand": "Travel Case", "volume": "45 литров", "material": "Полиэстер", "color": "Синий"},
+            "characteristics": {"material": "Полиэстер", "color": "Синий"},
             "images": ["test_image.jpg"]
         },
         {
@@ -400,7 +396,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 3400,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"brand": "4Roads", "volume": "25 литров", "material": "Полиэстер", "color": "Серый"},
+            "characteristics": {"material": "Полиэстер", "color": "Серый"},
             "images": ["test_image.jpg"]
         },
         {
@@ -412,7 +408,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": None,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"brand": "Travel Case", "volume": "55 литров", "material": "Нейлон", "color": "Зеленый"},
+            "characteristics": {"material": "Нейлон", "color": "Зеленый"},
             "images": ["test_image.jpg"]
         },
         
@@ -426,7 +422,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 7200,
             "is_active": True,
             "is_featured": True,
-            "characteristics": {"brand": "4Roads", "material": "Поликарбонат", "color": "Черный", "weight": "2.8 кг"},
+            "characteristics": {"material": "Поликарбонат", "color": "Черный"},
             "images": ["test_image.jpg"]
         },
         {
@@ -438,7 +434,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": None,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"brand": "Travel Case", "material": "Кожзам", "color": "Коричневый", "weight": "3.1 кг"},
+            "characteristics": {"material": "Кожзам", "color": "Коричневый"},
             "images": ["test_image.jpg"]
         },
         {
@@ -450,7 +446,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": 6500,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"brand": "4Roads", "material": "ABS-пластик", "color": "Серый", "weight": "2.4 кг"},
+            "characteristics": {"material": "ABS-пластик", "color": "Серый"},
             "images": ["test_image.jpg"]
         },
         {
@@ -462,7 +458,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": None,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"brand": "Travel Case", "material": "Полипропилен", "color": "Синий", "weight": "3.0 кг"},
+            "characteristics": {"material": "Полипропилен", "color": "Синий"},
             "images": ["test_image.jpg"]
         },
         
@@ -488,7 +484,7 @@ async def init_test_products(session: AsyncSession) -> None:
             "old_price": None,
             "is_active": True,
             "is_featured": False,
-            "characteristics": {"brand": "Travel Case", "size": "M", "material": "Спандекс", "color": "Серый"},
+            "characteristics": {"material": "Спандекс", "color": "Серый"},
             "images": ["test_image.jpg"]
         },
     ]
@@ -503,7 +499,7 @@ async def init_test_products(session: AsyncSession) -> None:
             old_price=product_data["old_price"],
             is_active=product_data["is_active"],
             is_featured=product_data["is_featured"],
-            category_id=category.id
+            category_id=categories[product_data["category"]].id
         )
         session.add(product)
         await session.flush()  # Получаем ID продукта
