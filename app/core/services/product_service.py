@@ -69,4 +69,12 @@ class ProductService:
     ) -> list[ProductModel]:
         products = await self.repository.get_for_home(is_new, is_featured, is_sales, limit)
         return [self._convert_to_dto(product) for product in products]
-
+    
+    async def search_by_name(
+        self,
+        search_query: str,
+        limit: int = 20,
+        offset: int = 0
+    ) -> list[ProductModel]:
+        products = await self.repository.search_by_name(search_query, limit, offset)
+        return [self._convert_to_dto(product) for product in products]

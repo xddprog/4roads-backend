@@ -10,6 +10,21 @@ router = APIRouter()
 
 
 @router.get(
+    "/search",
+    response_model=list[ProductModel],
+    summary="Поиск товаров по названию",
+    description="Возвращает список товаров, название которых содержит поисковый запрос"
+)
+async def search_products(
+    service: Annotated[ProductService, Depends(get_product_service)],
+    q: str = Query(..., min_length=1, description="Поисковый запрос"),
+    limit: int = Query(20, ge=1, le=100, description="Количество товаров"),
+    offset: int = Query(0, ge=0, description="Смещение для пагинации")
+) -> list[ProductModel]:
+    return await service.search_by_name(q, limit, offset)
+
+
+@router.get(
     "/home",
     response_model=list[ProductModel],
     summary="Получить товары для главной страницы",

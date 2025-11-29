@@ -118,6 +118,32 @@ class ProductRepository(SqlAlchemyRepository[Product]):
         result = await self.session.execute(query)
         return list(result.scalars().all())
     
+    async def search_by_name(
+        self,
+        search_query: str,
+        limit: int = 20,
+        offset: int = 0
+    ) -> list[Product]:
+        query = (
+            select(Product)
+            .where(
+                and_(
+                    Product.is_active == True,
+                    Product.name.ilike(f"%{search_query}%")
+                )
+            )
+            .options(
+                selectinload(Product.images),
+                selectinload(Product.characteristics).selectinload(ProductCharacteristic.characteristic_type)
+            )
+            .order_by(Product.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        
+        result = await self.session.execute(query)
+        return list(result.scalars().unique().all())
+    
     async def get_categories_with_count(self) -> list[tuple[Category, int]]:
         query = (
             select(Category, func.count(Product.id).label("product_count"))
