@@ -4,7 +4,13 @@ from passlib.context import CryptContext
 
 from app.infrastructure.database.models.admin import Admin
 from app.infrastructure.database.models.settings import Settings
-from app.infrastructure.database.models.product import CharacteristicType
+from app.infrastructure.database.models.category import Category
+from app.infrastructure.database.models.product import (
+    CharacteristicType,
+    Product,
+    ProductImage,
+    ProductCharacteristic
+)
 from app.infrastructure.database.models.faq import FAQ
 from app.utils.enums import CharacteristicTypeEnum
 from app.infrastructure.logging.logger import get_logger

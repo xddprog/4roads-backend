@@ -53,3 +53,9 @@ async def get_faq_service(session=Depends(get_db_session)) -> services.FAQServic
     return services.FAQService(
         repository=repositories.FAQRepository(session=session)
     )
+
+
+async def get_product_service(session=Depends(get_db_session)) -> services.ProductService:
+    return services.ProductService(
+        repository=repositories.ProductRepository(session=session)
+    )

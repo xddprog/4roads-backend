@@ -21,6 +21,4 @@ async def create_contact_form(
     data: ContactFormCreateModel,
     service: Annotated[ContactFormService, Depends(get_contact_form_service)]
 ) -> ContactFormModel:
-    """Отправить заявку обратной связи"""
     return await service.create_contact_form(data)
-

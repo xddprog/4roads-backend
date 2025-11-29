@@ -7,7 +7,7 @@ pyjwt
 pydantic
 pydantic-settings
 alembic
-psycopg2
+psycopg2-binary
 pytest
 pytest-asyncio
 httpx
