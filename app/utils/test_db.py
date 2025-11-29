@@ -2,7 +2,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from passlib.context import CryptContext
 
-from app.infrastructure.database.models.admin import Admin
 from app.infrastructure.database.models.settings import Settings
 from app.infrastructure.database.models.category import Category
 from app.infrastructure.database.models.product import (
@@ -12,27 +11,12 @@ from app.infrastructure.database.models.product import (
     ProductCharacteristic
 )
 from app.infrastructure.database.models.faq import FAQ
+from app.infrastructure.database.models.review import Review
 from app.utils.enums import CharacteristicTypeEnum
 from app.infrastructure.logging.logger import get_logger
 
 
 logger = get_logger(__name__)
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
-
-
-async def init_admin(session: AsyncSession) -> None:
-    """Инициализация тестового админа"""
-    result = await session.execute(select(Admin))
-    if result.scalars().first():
-        logger.info("admin_already_exists")
-        return
-    
-    admin = Admin(
-        login="admin123",
-        password=pwd_context.hash("admin123")
-    )
-    session.add(admin)
-    logger.info("admin_created", login="admin123")
 
 
 async def init_settings(session: AsyncSession) -> None:
@@ -108,12 +92,501 @@ async def init_faq(session: AsyncSession) -> None:
     logger.info("faq_created", count=len(faqs))
 
 
+async def init_test_products(session: AsyncSession) -> None:
+    """Создание тестовых категорий и продуктов"""
+    # Проверяем, есть ли уже продукты
+    result = await session.execute(select(Product))
+    if result.scalars().first():
+        logger.info("products_already_exist")
+        return
+    
+    # Создаем категории
+    categories_data = [
+        {"name": "Чемоданы", "slug": "chemodany", "description": "Пластиковые и тканевые чемоданы на колесах"},
+        {"name": "Сумки", "slug": "sumki", "description": "Дорожные сумки, бьюти-кейсы, спортивные сумки"},
+        {"name": "Рюкзаки", "slug": "ryukzaki", "description": "Обычные рюкзаки и рюкзаки на колесах"},
+        {"name": "Кейс-пилоты", "slug": "keys-piloty", "description": "Компактные чемоданы для ручной клади"},
+        {"name": "Аксессуары", "slug": "aksessuary", "description": "Чехлы для чемоданов и прочие аксессуары"},
+    ]
+    
+    categories = {}
+    for cat_data in categories_data:
+        category = Category(**cat_data)
+        session.add(category)
+        await session.flush()
+        categories[cat_data["slug"]] = category
+    
+    # Получаем типы характеристик
+    char_types_result = await session.execute(select(CharacteristicType))
+    char_types = {ct.slug: ct for ct in char_types_result.scalars().all()}
+    
+    # Создаем 30 продуктов
+    products_data = [
+        # Чемоданы (12 продуктов)
+        {
+            "category": "chemodany",
+            "name": "Чемодан 8802 (L) Темно-синий",
+            "slug": "chemodan-8802-l-temno-siniy",
+            "description": "Большой пластиковый чемодан на 4 колесах. Прочный поликарбонат, телескопическая ручка",
+            "price": 7220,
+            "old_price": 10900,
+            "is_active": True,
+            "is_featured": True,
+            "characteristics": {"brand": "4Roads", "size": "L", "material": "Поликарбонат", "color": "Темно-синий", "weight": "4.2 кг"},
+            "images": ["products/chemodan-8802-siniy.webp"]
+        },
+        {
+            "category": "chemodany",
+            "name": "Чемодан 8802 (L) Пурпурный",
+            "slug": "chemodan-8802-l-purpurnyy",
+            "description": "Большой пластиковый чемодан на 4 колесах. Яркий дизайн, встроенный кодовый замок",
+            "price": 7220,
+            "old_price": 10900,
+            "is_active": True,
+            "is_featured": True,
+            "characteristics": {"brand": "4Roads", "size": "L", "material": "Поликарбонат", "color": "Пурпурный", "weight": "4.2 кг"},
+            "images": ["products/chemodan-8802-purple.webp"]
+        },
+        {
+            "category": "chemodany",
+            "name": "Чемодан 8103 (L) Вишневый",
+            "slug": "chemodan-8103-l-vishnevyy",
+            "description": "Облегченный чемодан большого размера. Алюминиевая выдвижная ручка",
+            "price": 6600,
+            "old_price": 13900,
+            "is_active": True,
+            "is_featured": True,
+            "characteristics": {"brand": "Travel Case", "size": "L", "material": "ABS-пластик", "color": "Вишневый", "weight": "3.8 кг"},
+            "images": ["products/chemodan-8103-cherry.webp"]
+        },
+        {
+            "category": "chemodany",
+            "name": "Чемодан 8103 (L) Серый",
+            "slug": "chemodan-8103-l-seryy",
+            "description": "Стильный серый чемодан на 4 колесах. Вместительный и надежный",
+            "price": 6600,
+            "old_price": 13900,
+            "is_active": True,
+            "is_featured": False,
+            "characteristics": {"brand": "Travel Case", "size": "L", "material": "ABS-пластик", "color": "Серый", "weight": "3.8 кг"},
+            "images": ["products/chemodan-8103-grey.webp"]
+        },
+        {
+            "category": "chemodany",
+            "name": "Чемодан 8001 (S) Коралловый",
+            "slug": "chemodan-8001-s-korallovyy",
+            "description": "Маленький чемодан для ручной клади. Подходит для недельных поездок",
+            "price": 4200,
+            "old_price": 6500,
+            "is_active": True,
+            "is_featured": False,
+            "characteristics": {"brand": "4Roads", "size": "S", "material": "Полипропилен", "color": "Коралловый", "weight": "2.5 кг"},
+            "images": ["products/chemodan-8001-coral.webp"]
+        },
+        {
+            "category": "chemodany",
+            "name": "Чемодан Р-02 (M) Черный",
+            "slug": "chemodan-p02-m-chernyy",
+            "description": "Средний тканевый чемодан. Множество карманов, расширяемый объем",
+            "price": 4100,
+            "old_price": 7900,
+            "is_active": True,
+            "is_featured": False,
+            "characteristics": {"brand": "Travel Case", "size": "M", "material": "Полиэстер", "color": "Черный", "weight": "3.2 кг"},
+            "images": ["products/chemodan-p02-black.webp"]
+        },
+        {
+            "category": "chemodany",
+            "name": "Чемодан Р-02 (L) Темно-синий",
+            "slug": "chemodan-p02-l-temno-siniy",
+            "description": "Большой тканевый чемодан на 4 колесах. Водоотталкивающая ткань",
+            "price": 4740,
+            "old_price": 9900,
+            "is_active": True,
+            "is_featured": False,
+            "characteristics": {"brand": "Travel Case", "size": "L", "material": "Полиэстер", "color": "Темно-синий", "weight": "3.9 кг"},
+            "images": ["products/chemodan-p02-navy.webp"]
+        },
+        {
+            "category": "chemodany",
+            "name": "Чемодан Р-02 (L) Красный",
+            "slug": "chemodan-p02-l-krasnyy",
+            "description": "Яркий красный чемодан из прочной ткани. Легко узнать на багажной ленте",
+            "price": 4740,
+            "old_price": 9900,
+            "is_active": True,
+            "is_featured": False,
+            "characteristics": {"brand": "Travel Case", "size": "L", "material": "Полиэстер", "color": "Красный", "weight": "3.9 кг"},
+            "images": ["products/chemodan-p02-red.webp"]
+        },
+        {
+            "category": "chemodany",
+            "name": "Чемодан Р-02 (L) Голубой",
+            "slug": "chemodan-p02-l-goluboy",
+            "description": "Нежный голубой оттенок. Идеален для путешествий",
+            "price": 4740,
+            "old_price": 9900,
+            "is_active": True,
+            "is_featured": False,
+            "characteristics": {"brand": "Travel Case", "size": "L", "material": "Полиэстер", "color": "Голубой", "weight": "3.9 кг"},
+            "images": ["products/chemodan-p02-blue.webp"]
+        },
+        {
+            "category": "chemodany",
+            "name": "Чемодан Р-02 (L) Бордовый",
+            "slug": "chemodan-p02-l-bordovyy",
+            "description": "Элегантный бордовый чемодан. Классика для деловых поездок",
+            "price": 4740,
+            "old_price": 9900,
+            "is_active": True,
+            "is_featured": False,
+            "characteristics": {"brand": "Travel Case", "size": "L", "material": "Полиэстер", "color": "Бордовый", "weight": "3.9 кг"},
+            "images": ["products/chemodan-p02-bordo.webp"]
+        },
+        {
+            "category": "chemodany",
+            "name": "Чемодан 5501 (M) Золотой",
+            "slug": "chemodan-5501-m-zolotoy",
+            "description": "Роскошный золотой чемодан среднего размера. Зеркальное покрытие",
+            "price": 8500,
+            "old_price": 12900,
+            "is_active": True,
+            "is_featured": True,
+            "characteristics": {"brand": "4Roads", "size": "M", "material": "Поликарбонат", "color": "Золотой", "weight": "3.5 кг"},
+            "images": ["products/chemodan-5501-gold.webp"]
+        },
+        {
+            "category": "chemodany",
+            "name": "Чемодан 7702 (S) Розовый",
+            "slug": "chemodan-7702-s-rozovyy",
+            "description": "Маленький розовый чемодан для ручной клади. Идеален для коротких поездок",
+            "price": 3900,
+            "old_price": 5900,
+            "is_active": False,
+            "is_featured": False,
+            "characteristics": {"brand": "4Roads", "size": "S", "material": "ABS-пластик", "color": "Розовый", "weight": "2.3 кг"},
+            "images": ["products/chemodan-7702-pink.webp"]
+        },
+        
+        # Сумки (8 продуктов)
+        {
+            "category": "sumki",
+            "name": "Дорожная сумка на колесах 65 л Черная",
+            "slug": "dorozhnaya-sumka-65l-chernaya",
+            "description": "Вместительная дорожная сумка на 2 колесах. Удобные ручки и плечевой ремень",
+            "price": 3200,
+            "old_price": 4800,
+            "is_active": True,
+            "is_featured": True,
+            "characteristics": {"brand": "4Roads", "volume": "65 литров", "material": "Полиэстер", "color": "Черный"},
+            "images": ["products/sumka-dorozhnaya-black.webp"]
+        },
+        {
+            "category": "sumki",
+            "name": "Дорожная сумка на колесах 80 л Синяя",
+            "slug": "dorozhnaya-sumka-80l-sinyaya",
+            "description": "Большая дорожная сумка. Выдвижная телескопическая ручка",
+            "price": 3600,
+            "old_price": None,
+            "is_active": True,
+            "is_featured": False,
+            "characteristics": {"brand": "Travel Case", "volume": "80 литров", "material": "Полиэстер", "color": "Синий"},
+            "images": ["products/sumka-dorozhnaya-blue.webp"]
+        },
+        {
+            "category": "sumki",
+            "name": "Бьюти-кейс Розовый",
+            "slug": "byuti-keys-rozovyy",
+            "description": "Косметичка с зеркалом. Множество отделений для косметики",
+            "price": 1850,
+            "old_price": 2400,
+            "is_active": True,
+            "is_featured": False,
+            "characteristics": {"brand": "4Roads", "material": "Полиэстер", "color": "Розовый"},
+            "images": ["products/beauty-case-pink.webp"]
+        },
+        {
+            "category": "sumki",
+            "name": "Спортивная сумка 45 л Серая",
+            "slug": "sportivnaya-sumka-45l-seraya",
+            "description": "Сумка для спортзала с отделением для обуви. Влагостойкий материал",
+            "price": 2100,
+            "old_price": None,
+            "is_active": True,
+            "is_featured": False,
+            "characteristics": {"brand": "Travel Case", "volume": "45 литров", "material": "Нейлон", "color": "Серый"},
+            "images": ["products/sport-bag-grey.webp"]
+        },
+        {
+            "category": "sumki",
+            "name": "Сумка для документов А4 Черная",
+            "slug": "sumka-dokumenty-a4-chernaya",
+            "description": "Деловая сумка для ноутбука и документов формата А4",
+            "price": 2800,
+            "old_price": 3500,
+            "is_active": True,
+            "is_featured": False,
+            "characteristics": {"brand": "4Roads", "material": "Кожзам", "color": "Черный"},
+            "images": ["products/doc-bag-black.webp"]
+        },
+        {
+            "category": "sumki",
+            "name": "Сумка на пояс Хаки",
+            "slug": "sumka-poyas-khaki",
+            "description": "Компактная поясная сумка. Несколько карманов на молнии",
+            "price": 890,
+            "old_price": None,
+            "is_active": True,
+            "is_featured": False,
+            "characteristics": {"brand": "Travel Case", "material": "Нейлон", "color": "Хаки"},
+            "images": ["products/waist-bag-khaki.webp"]
+        },
+        {
+            "category": "sumki",
+            "name": "Молодежная сумка через плечо Синяя",
+            "slug": "molodezhnaya-sumka-sinyaya",
+            "description": "Стильная молодежная сумка-мессенджер",
+            "price": 1650,
+            "old_price": 2200,
+            "is_active": True,
+            "is_featured": False,
+            "characteristics": {"brand": "4Roads", "material": "Полиэстер", "color": "Синий"},
+            "images": ["products/messenger-bag-blue.webp"]
+        },
+        {
+            "category": "sumki",
+            "name": "Дорожная сумка складная 40 л",
+            "slug": "sumka-skladnaya-40l",
+            "description": "Складная дорожная сумка. Компактно складывается в чехол",
+            "price": 1200,
+            "old_price": None,
+            "is_active": False,
+            "is_featured": False,
+            "characteristics": {"brand": "Travel Case", "volume": "40 литров", "material": "Нейлон", "color": "Черный"},
+            "images": ["products/foldable-bag.webp"]
+        },
+        
+        # Рюкзаки (4 продукта)
+        {
+            "category": "ryukzaki",
+            "name": "Рюкзак на колесах 35 л Черный",
+            "slug": "ryukzak-kolesa-35l-chernyy",
+            "description": "Универсальный рюкзак-трансформер на колесах. Выдвижная ручка",
+            "price": 4200,
+            "old_price": 5800,
+            "is_active": True,
+            "is_featured": True,
+            "characteristics": {"brand": "4Roads", "volume": "35 литров", "material": "Полиэстер", "color": "Черный"},
+            "images": ["products/backpack-wheels-black.webp"]
+        },
+        {
+            "category": "ryukzaki",
+            "name": "Рюкзак на колесах 45 л Синий",
+            "slug": "ryukzak-kolesa-45l-siniy",
+            "description": "Большой рюкзак на колесах для путешествий. Анатомическая спинка",
+            "price": 4800,
+            "old_price": None,
+            "is_active": True,
+            "is_featured": False,
+            "characteristics": {"brand": "Travel Case", "volume": "45 литров", "material": "Полиэстер", "color": "Синий"},
+            "images": ["products/backpack-wheels-blue.webp"]
+        },
+        {
+            "category": "ryukzaki",
+            "name": "Городской рюкзак 25 л Серый",
+            "slug": "gorodskoy-ryukzak-25l-seryy",
+            "description": "Компактный городской рюкзак с отделением для ноутбука 15.6",
+            "price": 2600,
+            "old_price": 3400,
+            "is_active": True,
+            "is_featured": False,
+            "characteristics": {"brand": "4Roads", "volume": "25 литров", "material": "Полиэстер", "color": "Серый"},
+            "images": ["products/city-backpack-grey.webp"]
+        },
+        {
+            "category": "ryukzaki",
+            "name": "Туристический рюкзак 55 л Зеленый",
+            "slug": "turisticheskiy-ryukzak-55l-zelenyy",
+            "description": "Походный рюкзак с влагозащитной пропиткой. Регулируемые лямки",
+            "price": 3900,
+            "old_price": None,
+            "is_active": True,
+            "is_featured": False,
+            "characteristics": {"brand": "Travel Case", "volume": "55 литров", "material": "Нейлон", "color": "Зеленый"},
+            "images": ["products/hiking-backpack-green.webp"]
+        },
+        
+        # Кейс-пилоты (4 продукта)
+        {
+            "category": "keys-piloty",
+            "name": "Кейс-пилот на 4 колесах Черный",
+            "slug": "keys-pilot-4-kolesa-chernyy",
+            "description": "Компактный кейс для ручной клади. Отделение для ноутбука",
+            "price": 5400,
+            "old_price": 7200,
+            "is_active": True,
+            "is_featured": True,
+            "characteristics": {"brand": "4Roads", "material": "Поликарбонат", "color": "Черный", "weight": "2.8 кг"},
+            "images": ["products/pilot-case-black.webp"]
+        },
+        {
+            "category": "keys-piloty",
+            "name": "Кейс-пилот деловой Коричневый",
+            "slug": "keys-pilot-delovoy-korichnevyy",
+            "description": "Классический деловой кейс на 2 колесах. Кожаная отделка",
+            "price": 6800,
+            "old_price": None,
+            "is_active": True,
+            "is_featured": False,
+            "characteristics": {"brand": "Travel Case", "material": "Кожзам", "color": "Коричневый", "weight": "3.1 кг"},
+            "images": ["products/pilot-case-brown.webp"]
+        },
+        {
+            "category": "keys-piloty",
+            "name": "Кейс-пилот облегченный Серый",
+            "slug": "keys-pilot-oblegchennyy-seryy",
+            "description": "Легкий кейс из ABS-пластика. Вместительный и надежный",
+            "price": 4900,
+            "old_price": 6500,
+            "is_active": True,
+            "is_featured": False,
+            "characteristics": {"brand": "4Roads", "material": "ABS-пластик", "color": "Серый", "weight": "2.4 кг"},
+            "images": ["products/pilot-case-grey.webp"]
+        },
+        {
+            "category": "keys-piloty",
+            "name": "Кейс-пилот расширяемый Синий",
+            "slug": "keys-pilot-rasshiryaemyy-siniy",
+            "description": "Кейс с возможностью расширения объема. USB-порт для зарядки",
+            "price": 7200,
+            "old_price": None,
+            "is_active": True,
+            "is_featured": False,
+            "characteristics": {"brand": "Travel Case", "material": "Полипропилен", "color": "Синий", "weight": "3.0 кг"},
+            "images": ["products/pilot-case-blue.webp"]
+        },
+        
+        # Аксессуары (2 продукта)
+        {
+            "category": "aksessuary",
+            "name": "Чехол для чемодана размер L",
+            "slug": "chekhol-chemodan-razmer-l",
+            "description": "Защитный чехол из эластичной ткани. Защита от царапин и грязи",
+            "price": 890,
+            "old_price": 1200,
+            "is_active": True,
+            "is_featured": True,
+            "characteristics": {"brand": "4Roads", "size": "L", "material": "Спандекс", "color": "Черный"},
+            "images": ["products/cover-l-black.webp"]
+        },
+        {
+            "category": "aksessuary",
+            "name": "Чехол для чемодана размер M",
+            "slug": "chekhol-chemodan-razmer-m",
+            "description": "Универсальный чехол среднего размера. Легко надевается",
+            "price": 750,
+            "old_price": None,
+            "is_active": True,
+            "is_featured": False,
+            "characteristics": {"brand": "Travel Case", "size": "M", "material": "Спандекс", "color": "Серый"},
+            "images": ["products/cover-m-grey.webp"]
+        },
+    ]
+    
+    for product_data in products_data:
+        # Создаем продукт
+        product = Product(
+            name=product_data["name"],
+            slug=product_data["slug"],
+            description=product_data["description"],
+            price=product_data["price"],
+            old_price=product_data["old_price"],
+            is_active=product_data["is_active"],
+            is_featured=product_data["is_featured"],
+            category_id=category.id
+        )
+        session.add(product)
+        await session.flush()  # Получаем ID продукта
+        
+        # Добавляем изображения
+        for idx, image_path in enumerate(product_data["images"]):
+            image = ProductImage(
+                image_path=image_path,
+                order=idx,
+                product_id=product.id
+            )
+            session.add(image)
+        
+        # Добавляем характеристики
+        for char_slug, char_value in product_data["characteristics"].items():
+            if char_slug in char_types:
+                characteristic = ProductCharacteristic(
+                    value=char_value,
+                    product_id=product.id,
+                    characteristic_type_id=char_types[char_slug].id
+                )
+                session.add(characteristic)
+    
+    logger.info("test_products_created", count=len(products_data))
+
+
+async def init_reviews(session: AsyncSession) -> None:
+    """Создание тестовых отзывов"""
+    # Проверяем, есть ли уже отзывы
+    result = await session.execute(select(Review))
+    if result.scalars().first():
+        logger.info("reviews_already_exist")
+        return
+    
+    # Получаем первые 3 продукта для отзывов
+    products_result = await session.execute(select(Product).limit(3))
+    products = list(products_result.scalars().all())
+    
+    if not products:
+        logger.warning("no_products_found_for_reviews")
+        return
+    
+    reviews_data = [
+        {
+            "author_name": "Анна Смирнова",
+            "content": "Отличный чемодан! Купила для отпуска в Турцию. Очень вместительный, легко катится на колесиках. Материал прочный, не царапается. Рекомендую!",
+            "rating": 5,
+            "image": None,
+            "is_active": True,
+            "product_id": products[0].id
+        },
+        {
+            "author_name": "Дмитрий Петров",
+            "content": "Хороший чемодан за свои деньги. Брал в командировку, всё поместилось. Единственный минус - замок туговат, но это не критично. В целом доволен покупкой.",
+            "rating": 4,
+            "image": "reviews/review-1.webp",
+            "is_active": True,
+            "product_id": products[0].id
+        },
+        {
+            "author_name": "Елена Васильева",
+            "content": "Заказывала для дочери в университет. Чемодан легкий, удобный. Цвет яркий, сразу заметно на багажной ленте. Доставка быстрая, упаковка хорошая. Спасибо!",
+            "rating": 5,
+            "image": None,
+            "is_active": True,
+            "product_id": products[1].id if len(products) > 1 else products[0].id
+        },
+    ]
+    
+    for review_data in reviews_data:
+        review = Review(**review_data)
+        session.add(review)
+    
+    logger.info("test_reviews_created", count=len(reviews_data))
+
+
 async def test_db(session: AsyncSession) -> None:
     try:
-        await init_admin(session)
         await init_settings(session)
         await init_characteristic_types(session)
         await init_faq(session)
+        await init_test_products(session)
+        await init_reviews(session)
         
         await session.commit()
         logger.info("test_data_initialized")

@@ -55,6 +55,8 @@ class AppConfig(Config):
     SLOW_REQUEST_THRESHOLD: float = Field(default=1.0, description="Порог медленных запросов в секундах")
 
     CORS_ALLOWED_ORIGINS: str = Field(default="http://localhost:3000,http://localhost:5173")
+    
+    SITEMAP_PASSWORD: str = Field(default="change-me-sitemap-secret")
 
 
 class Settings(Config):

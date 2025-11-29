@@ -12,4 +12,3 @@ class ContactFormService:
         contact_form = ContactForm(**data.model_dump())
         created = await self.repository.add_item(contact_form)
         return ContactFormModel.model_validate(created, from_attributes=True)
-

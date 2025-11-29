@@ -22,21 +22,6 @@ async def get_db_session(
         await session.close()
 
 
-async def get_auth_service(session=Depends(get_db_session)) -> services.AuthService:
-    return services.AuthService(
-        repository=repositories.AdminRepository(session=session)
-    )
-
-
-async def get_current_admin_dependency(
-    auth_service: Annotated[services.AuthService, Depends(get_auth_service)],
-    auth_scheme: Annotated[HTTPAuthorizationCredentials | None, Depends(token_scheme)]
-) -> BaseAdminModel:
-    token = auth_scheme.credentials if auth_scheme else None
-    token_data = await auth_service.verify_token(token)
-    return await auth_service.check_user_exist(token_data)
-
-
 async def get_settings_service(session=Depends(get_db_session)) -> services.SettingsService:
     return services.SettingsService(
         repository=repositories.SettingsRepository(session=session)
@@ -58,4 +43,10 @@ async def get_faq_service(session=Depends(get_db_session)) -> services.FAQServic
 async def get_product_service(session=Depends(get_db_session)) -> services.ProductService:
     return services.ProductService(
         repository=repositories.ProductRepository(session=session)
+    )
+
+
+async def get_review_service(session=Depends(get_db_session)) -> services.ReviewService:
+    return services.ReviewService(
+        repository=repositories.ReviewRepository(session=session)
     )

@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 from uuid import UUID
+from datetime import datetime
 
 
 class ProductImageModel(BaseModel):
@@ -26,6 +27,13 @@ class ProductModel(BaseModel):
     category_id: UUID
     images: list[ProductImageModel]
     characteristics: list[ProductCharacteristicModel]
+
+class BaseProductModel(BaseModel):
+    id: UUID
+    name: str
+    slug: str
+    updated_at: datetime
+    is_active: bool
 
 
 class ProductFilterModel(BaseModel):

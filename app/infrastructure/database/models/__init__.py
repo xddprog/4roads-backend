@@ -1,5 +1,4 @@
 from .base import Base
-from .admin import Admin
 from .category import Category
 from .product import Product, ProductImage, ProductCharacteristic, CharacteristicType
 from .review import Review
@@ -10,7 +9,6 @@ from .contact_form import ContactForm
 
 __all__ = [
     "Base",
-    "Admin",
     "Category",
     "Product",
     "ProductImage",
