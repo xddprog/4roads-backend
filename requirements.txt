@@ -15,4 +15,5 @@ Pillow
 python-multipart
 structlog
 python-slugify
+sqladmin
 
