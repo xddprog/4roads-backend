@@ -14,6 +14,7 @@ from app.infrastructure.logging.logger import configure_logging, get_logger
 from app.infrastructure.middleware import LoggingMiddleware
 from app.infrastructure.config.config import APP_CONFIG
 
+from admin.admin import create_admin, sync_engine
 
 configure_logging()
 logger = get_logger(__name__)
@@ -60,3 +61,6 @@ app.mount("/static", StaticFiles(directory=APP_CONFIG.STATIC_DIR), name="static"
 logger.info("static_files_mounted", directory=APP_CONFIG.STATIC_DIR)
 
 app.include_router(api_v1_routers)
+
+admin = create_admin(engine=sync_engine)
+admin.mount_to(app)

@@ -15,4 +15,4 @@ Pillow
 python-multipart
 structlog
 python-slugify
-sqladmin
+starlette_admin
