@@ -50,3 +50,10 @@ async def get_review_service(session=Depends(get_db_session)) -> services.Review
     return services.ReviewService(
         repository=repositories.ReviewRepository(session=session)
     )
+
+
+async def get_filter_service(session=Depends(get_db_session)) -> services.FilterService:
+    return services.FilterService(
+        product_repository=repositories.ProductRepository(session=session),
+        characteristic_repository=repositories.CharacteristicTypeRepository(session=session)
+    )

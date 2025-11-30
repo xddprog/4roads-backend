@@ -3,3 +3,4 @@ from app.core.repositories.contact_form_repository import ContactFormRepository
 from app.core.repositories.faq_repository import FAQRepository
 from app.core.repositories.product_repository import ProductRepository
 from app.core.repositories.review_repository import ReviewRepository
+from app.core.repositories.characteristic_repository import CharacteristicTypeRepository

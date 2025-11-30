@@ -5,3 +5,4 @@ from app.core.services.contact_form_service import ContactFormService
 from app.core.services.faq_service import FAQService
 from app.core.services.product_service import ProductService
 from app.core.services.review_service import ReviewService
+from app.core.services.filter_service import FilterService
