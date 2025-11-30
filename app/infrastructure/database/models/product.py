@@ -20,7 +20,7 @@ class Product(Base):
     slug: Mapped[str] = mapped_column(unique=True)
     description: Mapped[str | None]
     price: Mapped[int]
-    old_price: Mapped[int | None]
+    discount_percent: Mapped[int | None] = mapped_column(nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True)
     is_featured: Mapped[bool] = mapped_column(default=False)
     

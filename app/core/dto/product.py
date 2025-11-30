@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from uuid import UUID
 from datetime import datetime
 
@@ -27,12 +27,19 @@ class ProductModel(BaseModel):
     slug: str
     description: str | None
     price: int
-    old_price: int | None
+    discount_percent: int | None
+    old_price: int | None = None
     is_active: bool
     is_featured: bool
     category_id: UUID
     images: list[ProductImageModel]
     characteristics: list[ProductCharacteristicModel]
+    
+    @model_validator(mode='after')
+    def compute_old_price(self) -> 'ProductModel':
+        if self.discount_percent and self.discount_percent > 0:
+            self.old_price = int(self.price / (1 - self.discount_percent / 100))
+        return self
 
 class BaseProductModel(BaseModel):
     id: UUID

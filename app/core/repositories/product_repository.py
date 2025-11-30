@@ -110,7 +110,7 @@ class ProductRepository(SqlAlchemyRepository[Product]):
         elif is_featured:
             query = query.where(Product.is_featured == True).order_by(Product.created_at.desc())
         elif is_sales:
-            query = query.where(Product.old_price != None).order_by(Product.created_at.desc())
+            query = query.where(Product.discount_percent != None).order_by(Product.created_at.desc())
         else:
             query = query.order_by(Product.created_at.desc())
         

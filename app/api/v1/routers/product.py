@@ -34,7 +34,7 @@ async def get_home_products(
     service: Annotated[ProductService, Depends(get_product_service)],
     is_new: bool = Query(False, description="Новинки (последние добавленные)"),
     is_featured: bool = Query(False, description="Рекомендуемые (хиты продаж)"),
-    is_sales: bool = Query(False, description="Скидки (товары с old_price)"),
+    is_sales: bool = Query(False, description="Скидки (товары с discount_percent)"),
     limit: int = Query(9, ge=1, le=50, description="Количество товаров")
 ) -> list[ProductModel]:
     return await service.get_for_home(is_new, is_featured, is_sales, limit)

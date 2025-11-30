@@ -14,18 +14,6 @@ from app.infrastructure.logging.logger import configure_logging, get_logger
 from app.infrastructure.middleware import LoggingMiddleware
 from app.infrastructure.config.config import APP_CONFIG
 
-from admin.admin import (
-    CategoryAdmin,
-    ContactFormAdmin,
-    FAQAdmin,
-    ProductAdmin,
-    ProductImageAdmin,
-    CharacteristicTypeAdmin,
-    ProductCharacteristicAdmin,
-    ReviewAdmin,
-    SettingsAdmin
-)
-
 
 configure_logging()
 logger = get_logger(__name__)
@@ -72,14 +60,3 @@ app.mount("/static", StaticFiles(directory=APP_CONFIG.STATIC_DIR), name="static"
 logger.info("static_files_mounted", directory=APP_CONFIG.STATIC_DIR)
 
 app.include_router(api_v1_routers)
-
-admin = Admin(app=app, engine=sync_engine)
-admin.add_view(CategoryAdmin)
-admin.add_view(ContactFormAdmin)
-admin.add_view(FAQAdmin)
-admin.add_view(ProductAdmin)
-admin.add_view(ProductImageAdmin)
-admin.add_view(CharacteristicTypeAdmin)
-admin.add_view(ProductCharacteristicAdmin)
-admin.add_view(ReviewAdmin)
-admin.add_view(SettingsAdmin)

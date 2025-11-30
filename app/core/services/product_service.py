@@ -18,7 +18,7 @@ class ProductService:
             slug=product.slug,
             description=product.description,
             price=product.price,
-            old_price=product.old_price,
+            discount_percent=product.discount_percent,
             is_active=product.is_active,
             is_featured=product.is_featured,
             category_id=product.category_id,
