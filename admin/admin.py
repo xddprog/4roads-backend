@@ -39,10 +39,10 @@ class CategoryAdmin(ModelView):
     label = "Категория"
     label_plural = "Категории"
 
-    actions = ["discount_custom"]
+    actions = ["discount_category", "remove_discount_categories"]
 
     @action(
-        name="discount_custom",
+        name="discount_category",
         text="Сделать индивидуальную скидку",
         confirmation="Укажите размер скидки в процентах",
         submit_btn_text="Применить",
@@ -51,7 +51,7 @@ class CategoryAdmin(ModelView):
             <form>
                 <div class="mt-3">
                     <label>Размер скидки (%)</label>
-                    <input type="number" min="1" max="90" step="1"
+                    <input type="number" min="1" max="99" step="1"
                            class="form-control"
                            name="discount"
                            placeholder="Например: 15">
@@ -59,7 +59,7 @@ class CategoryAdmin(ModelView):
             </form>
             """
     )
-    async def discount_custom(self, request: Request, pks: List[Any]) -> str:
+    async def discount_category(self, request: Request, pks: List[Any]) -> str:
         form: FormData = await request.form()
         discount_str = form.get("discount")
         if not discount_str:
@@ -78,13 +78,31 @@ class CategoryAdmin(ModelView):
             logger.info(f"Result: {result}")
             logger.info(f"Selected pks: {pks}")
             for product in result:
-                product.old_price = product.price
-                product.price = round(product.price * (100 - discount) / 100, 2)
-                logger.info(f"Old price: {product.old_price} New price: {product.price}")
+                product.discount_percent = discount
+                logger.info(f"Discount add: {product.discount_percent}")
             session.commit()
-            return f"Цена снижена на {discount}% у выбранных категорий"
+            return f"Скидка {discount}% применена у выбранных категорий"
         except Exception as e:
-            return str(e)
+            raise ActionFailed(str(e))
+
+    @action(
+        name="remove_discount_categories",
+        text="Убрать скидку на выбранные категории"
+    )
+    async def remove_discount_categories(self, request: Request, pks: List[Any]) -> str:
+        try:
+            session = Session()
+            result = session.query(Product).filter(Product.category_id.in_(pks)).all()
+            logger.info(f"Result: {result}")
+            logger.info(f"Selected pks: {pks}")
+            for product in result:
+                old_discount = product.discount_percent
+                product.discount_percent = None
+                logger.info(f"Removed discount: {old_discount}")
+            session.commit()
+            return f"Скидка у выбранных категорий удалена"
+        except Exception as e:
+            raise ActionFailed(str(e))
 
 
 # -----------------------------------------------------------
@@ -94,35 +112,70 @@ class ProductAdmin(ModelView):
     label = "Товар"
     label_plural = "Товары"
 
-    actions = ["discount"]
+    actions = ["discount_products", "remove_discount_products"]
 
     @action(
-        name="discount",
-        text="Сделать скидку выбранным товарам",
-        confirmation="Применить скидку 10% выбранным товарам?",
-        submit_btn_text="Да",
+        name="discount_products",
+        text="Сделать скидку на выбранные товары",
+        confirmation="Укажите размер скидки в процентах",
+        submit_btn_text="Применить",
         submit_btn_class="btn-primary",
+        form="""
+                <form>
+                    <div class="mt-3">
+                        <label>Размер скидки (%)</label>
+                        <input type="number" min="1" max="99" step="1"
+                               class="form-control"
+                               name="discount"
+                               placeholder="Например: 15">
+                    </div>
+                </form>
+                """
     )
-    async def discount_action(self, request: Request, pks: List[Any]) -> str:
-        async with self.session_maker() as session:
-            for product_id in pks:
-                result = await session.execute(
-                    select(Product).where(Product.id == product_id)
-                )
-                product = result.scalar_one_or_none()
+    async def discount_products(self, request: Request, pks: List[Any]) -> str:
+        form: FormData = await request.form()
+        discount_str = form.get("discount")
+        if not discount_str:
+            raise ActionFailed("Не указан процент скидки.")
+        try:
+            discount = int(discount_str)
+        except ValueError:
+            raise ActionFailed("Процент должен быть целым числом.")
 
-                if not product:
-                    continue
+        if discount < 1 or discount > 99:
+            raise ActionFailed("Процент должен быть от 1 до 99.")
 
-                if getattr(product, "is_discount_exempt", False):
-                    continue
+        try:
+            session = Session()
+            result = session.query(Product).filter(Product.id.in_(pks)).all()
+            logger.info(f"Result: {result}")
+            logger.info(f"Selected pks: {pks}")
+            for product in result:
+                product.discount_percent = discount
+                logger.info(f"Discount add: {product.discount_percent}")
+            session.commit()
+            return f"Скидка {discount}% применена у выбранных товаров"
+        except Exception as e:
+            raise ActionFailed(str(e))
 
-                product.old_price = product.price
-                product.price = round(product.price * 0.9, 2)
-
-            await session.commit()
-
-        return "Скидка успешно применена!"
+    @action(
+        name="remove_discount_products",
+        text="Убрать скидку на выбранные товары"
+    )
+    async def remove_discount_products(self, request: Request, pks: List[Any]) -> str:
+        try:
+            session = Session()
+            result = session.query(Product).filter(Product.id.in_(pks)).all()
+            logger.info(f"Result: {result}")
+            logger.info(f"Selected pks: {pks}")
+            for product in result:
+                old_discount = product.discount_percent
+                product.discount_percent = None
+                logger.info(f"Removed discount: {old_discount}")
+            session.commit()
+            return f"Скидка у выбранных товаров удалена"
+        except Exception as e:
+            raise ActionFailed(str(e))
 
 
 # -----------------------------------------------------------
