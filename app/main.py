@@ -1,6 +1,5 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
-from sqladmin import Admin
 
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,7 +8,6 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.routers import api_v1_routers
 from app.infrastructure.database.adapters.pg_connection import DatabaseConnection
-from app.infrastructure.database.adapters.sync_connection import sync_engine
 from app.infrastructure.logging.logger import configure_logging, get_logger
 from app.infrastructure.middleware import LoggingMiddleware
 from app.infrastructure.config.config import APP_CONFIG
