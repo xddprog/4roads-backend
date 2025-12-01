@@ -44,7 +44,7 @@ class JWTConfig(Config):
 class AppConfig(Config):
     APP_NAME: str = Field(default="4roads API")
     DEBUG: bool = Field(default=False)
-    STATIC_URL: str = Field(default="http://localhost:8000/static/")
+    STATIC_URL: str = Field(default="http://localhost:8000/static")
     
     STATIC_DIR: str = Field(default="static")
     IMAGES_DIR: str = Field(default="static/images")

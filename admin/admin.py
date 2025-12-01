@@ -1,6 +1,5 @@
-import logging
-
 from typing import Any, List
+from dataclasses import dataclass
 
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
@@ -10,10 +9,13 @@ from starlette.responses import Response, RedirectResponse
 from starlette.datastructures import FormData
 
 from starlette_admin import action
+from starlette_admin.fields import ImageField as BaseImageField, BaseField, StringField, EnumField
 from starlette_admin.contrib.sqla import Admin, ModelView
 from starlette_admin.exceptions import ActionFailed
+from starlette_admin._types import RequestAction
 
 from app.infrastructure.database.models.category import Category
+from app.infrastructure.config.config import APP_CONFIG
 from app.infrastructure.database.models.contact_form import ContactForm
 from app.infrastructure.database.models.faq import FAQ
 from app.infrastructure.database.models.product import (
@@ -26,10 +28,81 @@ from app.infrastructure.database.models.review import Review
 from app.infrastructure.database.models.settings import Settings
 from app.infrastructure.database.adapters.sync_connection import sync_engine
 
+from app.infrastructure.logging.logger import get_logger
+
+from app.utils.enums import CharacteristicTypeEnum
+
 Session = sessionmaker(bind=sync_engine)
 
-logger = logging.getLogger("myadmin")
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
+
+
+# -----------------------------------------------------------
+# CUSTOM FIELDS
+# -----------------------------------------------------------
+@dataclass
+class StaticImageField(BaseImageField):
+    """Кастомное поле для отображения изображений из статической директории"""
+    
+    async def serialize_value(
+        self, request: Request, value: Any, action: RequestAction
+    ) -> dict | None:
+        """Сериализует путь к изображению в формат, понятный starlette-admin"""
+        if not value:
+            return None
+        
+        # Формируем полный URL к изображению
+        image_url = f"{APP_CONFIG.STATIC_URL}/{value}"
+        
+        return {
+            "url": image_url,
+            "filename": str(value)
+        }
+
+
+@dataclass
+class ProductImagesListField(BaseImageField):
+    """Кастомное поле для отображения списка изображений продукта"""
+    
+    def __init__(self, name: str, label: str | None = None):
+        super().__init__(name)
+        if label:
+            self.label = label
+    
+    async def serialize_value(
+        self, request: Request, value: Any, action: RequestAction
+    ) -> list[dict] | None:
+        if not value:
+            return None
+        
+        images = []
+        for img in value:
+            if hasattr(img, 'image_path') and img.image_path:
+                image_url = f"{APP_CONFIG.STATIC_URL}/{img.image_path}"
+                images.append({
+                    "url": image_url,
+                    "filename": str(img.image_path)
+                })
+        
+        return images[0] if images else None
+
+
+@dataclass
+class CategoryNameField(BaseField):
+    """Кастомное поле для отображения названия категории вместо UUID"""
+    
+    async def serialize_value(
+        self, request: Request, value: Any, action: RequestAction
+    ) -> str | None:
+        """Возвращает название категории"""
+        if not value:
+            return None
+        
+        # value - это объект Category
+        if hasattr(value, 'name'):
+            return value.name
+        
+        return None
 
 
 # -----------------------------------------------------------
@@ -39,6 +112,15 @@ class CategoryAdmin(ModelView):
     label = "Категория"
     label_plural = "Категории"
 
+    fields = [
+        StringField("id", label="ID"),
+        StringField("name", label="Название"),
+        StringField("slug", label="URL-адрес"),
+        StringField("description", label="Описание"),
+        StaticImageField("image", label="Изображение"),
+        StringField("products_count", label="Количество товаров")
+    ]
+    
     actions = ["discount_category", "remove_discount_categories"]
 
     @action(
@@ -111,6 +193,24 @@ class CategoryAdmin(ModelView):
 class ProductAdmin(ModelView):
     label = "Товар"
     label_plural = "Товары"
+    
+    exclude_fields_from_list = ["characteristics", "reviews"]
+    exclude_fields_from_create = ["images", "characteristics", "reviews"]
+    exclude_fields_from_edit = ["images", "characteristics", "reviews"]
+    
+    fields = [
+        StringField("id", label="ID"),
+        StringField("name", label="Название"),
+        StringField("slug", label="URL-адрес"),
+        StringField("description", label="Описание"),
+        StringField("price", label="Цена"),
+        StringField("discount_percent", label="Скидка (%)"),
+        StringField("is_active", label="Активен"),
+        StringField("is_featured", label="Рекомендуемый"),
+        CategoryNameField("category", label="Категория"),  # Показываем название категории вместо UUID
+        ProductImagesListField("images", label="Изображения"),  # Показываем список изображений
+        StringField("characteristics", label="Характеристики"),
+    ]
 
     actions = ["discount_products", "remove_discount_products"]
 
@@ -184,6 +284,14 @@ class ProductAdmin(ModelView):
 class ContactFormAdmin(ModelView):
     label = "Контакт"
     label_plural = "Контакты"
+    
+    fields = [
+        StringField("id", label="ID"),
+        StringField("name", label="Имя"),
+        StringField("phone", label="Телефон"),
+        StringField("message", label="Сообщение"),
+        StringField("is_processed", label="Обработано")
+    ]
 
 
 # -----------------------------------------------------------
@@ -192,6 +300,13 @@ class ContactFormAdmin(ModelView):
 class FAQAdmin(ModelView):
     label = "FAQ"
     label_plural = "Частые вопросы"
+    
+    fields = [
+        StringField("id", label="ID"),
+        StringField("question", label="Вопрос"),
+        StringField("answer", label="Ответ"),
+        StringField("is_active", label="Активен")
+    ]
 
 
 # -----------------------------------------------------------
@@ -200,6 +315,13 @@ class FAQAdmin(ModelView):
 class ProductImageAdmin(ModelView):
     label = "Изображение товара"
     label_plural = "Изображения товаров"
+    
+    fields = [
+        StringField("id", label="ID"),
+        StringField("product", label="Товар"),
+        StaticImageField("image_path", label="Изображение"),  # Используем кастомное поле для изображений
+        StringField("order", label="Порядок")
+    ]
 
 
 # -----------------------------------------------------------
@@ -208,7 +330,25 @@ class ProductImageAdmin(ModelView):
 class CharacteristicTypeAdmin(ModelView):
     label = "Тип характеристики"
     label_plural = "Типы характеристик"
+    
+    
+    fields = [
+        StringField("id", label="ID"),
+        EnumField("name", label="Название", choices=[(i, i.value) for i in CharacteristicTypeEnum]),
+        StringField("slug", label="URL-адрес")
+    ]
 
+    actions = []
+    
+    def is_accessible(self, request: Request) -> bool:
+        route = request.url.path.split("/")[-1]
+        if route == "create":
+            return False
+        if route == "edit":
+            return False
+        if route == "delete":
+            return False
+        return True
 
 # -----------------------------------------------------------
 # PRODUCT CHARACTERISTIC
@@ -216,6 +356,13 @@ class CharacteristicTypeAdmin(ModelView):
 class ProductCharacteristicAdmin(ModelView):
     label = "Характеристика товара"
     label_plural = "Характеристики товаров"
+    
+    fields = [
+        StringField("id", label="ID"),
+        StringField("value", label="Значение"),
+        StringField("product", label="Товар"),
+        StringField("characteristic_type", label="Тип характеристики")
+    ]
 
 
 # -----------------------------------------------------------
@@ -224,6 +371,16 @@ class ProductCharacteristicAdmin(ModelView):
 class ReviewAdmin(ModelView):
     label = "Отзыв"
     label_plural = "Отзывы"
+    
+    fields = [
+        StringField("id", label="ID"),
+        StringField("author_name", label="Имя автора"),
+        StringField("content", label="Содержание"),
+        StringField("rating", label="Рейтинг"),
+        StaticImageField("image", label="Изображение"),  # Используем кастомное поле для изображений
+        StringField("is_active", label="Активен"),
+        StringField("product", label="Товар")
+    ]
 
 
 # -----------------------------------------------------------
@@ -232,6 +389,19 @@ class ReviewAdmin(ModelView):
 class SettingsAdmin(ModelView):
     label = "Настройки"
     label_plural = "Настройки"
+    
+    fields = [
+        StringField("id", label="ID"),
+        StringField("phone", label="Телефон"),
+        StringField("email", label="Email"),
+        StringField("address", label="Адрес"),
+        StringField("vk_url", label="VK URL"),
+        StringField("telegram_url", label="Telegram URL"),
+        StringField("whatsapp_url", label="WhatsApp URL"),
+        StringField("youtube_url", label="YouTube URL"),
+        StringField("about_text", label="О нас"),
+        StringField("work_hours", label="Время работы")
+    ]
 
 
 # -----------------------------------------------------------

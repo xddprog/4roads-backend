@@ -12,3 +12,6 @@ class ContactForm(Base):
     
     is_processed: Mapped[bool] = mapped_column(default=False)
 
+    def __repr__(self):
+        return f"<ContactForm(name='{self.name}', phone='{self.phone}', processed={self.is_processed})>"
+

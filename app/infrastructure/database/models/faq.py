@@ -10,4 +10,6 @@ class FAQ(Base):
     answer: Mapped[str]
     is_active: Mapped[bool] = mapped_column(default=True)
 
+    def __repr__(self):
+        return f"<FAQ(question='{self.question[:50]}...', active={self.is_active})>"
     

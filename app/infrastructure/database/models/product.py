@@ -40,6 +40,9 @@ class Product(Base):
         cascade="all, delete-orphan"
     )
 
+    def __repr__(self):
+        return self.name
+
 
 class ProductImage(Base):
     __tablename__ = "product_images"
@@ -50,6 +53,9 @@ class ProductImage(Base):
     product_id: Mapped[UUID] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"))
 
     product: Mapped["Product"] = relationship(back_populates="images")
+
+    def __repr__(self):
+        return self.image_path
 
 
 class CharacteristicType(Base):
@@ -66,6 +72,9 @@ class CharacteristicType(Base):
         cascade="all, delete-orphan"
     )
 
+    def __repr__(self):
+        return self.name.value
+
 
 class ProductCharacteristic(Base):
     __tablename__ = "product_characteristics"
@@ -77,3 +86,12 @@ class ProductCharacteristic(Base):
     
     product: Mapped["Product"] = relationship(back_populates="characteristics")
     characteristic_type: Mapped["CharacteristicType"] = relationship(back_populates="characteristics")
+
+    def __repr__(self):
+        type_name = "N/A"
+        try:
+            if self.characteristic_type and hasattr(self.characteristic_type, 'name'):
+                type_name = self.characteristic_type.name.value if hasattr(self.characteristic_type.name, 'value') else str(self.characteristic_type.name)
+        except (AttributeError, RuntimeError):
+            pass
+        return f"{type_name} - {self.value}"

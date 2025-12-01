@@ -29,7 +29,6 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         
         try:
             response = await call_next(request)
-            
             process_time = time.time() - start_time
             
             response.headers["X-Request-ID"] = request_id
@@ -51,8 +50,8 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             return response
         
         except Exception as exc:
+            print(f"Error: {exc}")
             process_time = time.time() - start_time
-            
             logger.error(
                 "request_error",
                 method=request.method,

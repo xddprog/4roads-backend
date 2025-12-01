@@ -23,3 +23,6 @@ class Review(Base):
     
     product: Mapped["Product"] = relationship(back_populates="reviews")
 
+    def __repr__(self):
+        return f"<Review(author='{self.author_name}', rating={self.rating})>"
+
