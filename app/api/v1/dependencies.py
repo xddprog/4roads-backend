@@ -57,3 +57,9 @@ async def get_filter_service(session=Depends(get_db_session)) -> services.Filter
         product_repository=repositories.ProductRepository(session=session),
         characteristic_repository=repositories.CharacteristicTypeRepository(session=session)
     )
+
+
+async def get_category_service(session=Depends(get_db_session)) -> services.CategoryService:
+    return services.CategoryService(
+        repository=repositories.CategoryRepository(session=session)
+    )

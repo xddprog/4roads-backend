@@ -6,6 +6,7 @@ from app.api.v1.routers.contact_form import router as contact_form_router
 from app.api.v1.routers.settings import router as settings_router
 from app.api.v1.routers.review import router as review_router
 from app.api.v1.routers.filters import router as filters_router
+from app.api.v1.routers.category import router as category_router
 
 
 api_v1_routers = APIRouter(prefix="/api/v1")
@@ -15,3 +16,4 @@ api_v1_routers.include_router(contact_form_router, prefix="/contact", tags=["con
 api_v1_routers.include_router(settings_router, prefix="/settings", tags=["settings"])
 api_v1_routers.include_router(review_router, prefix="/review", tags=["review"])
 api_v1_routers.include_router(filters_router, prefix="/filters", tags=["filters"])
+api_v1_routers.include_router(category_router, prefix="/category", tags=["category"])

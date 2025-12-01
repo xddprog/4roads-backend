@@ -42,7 +42,7 @@ class ProductRepository(SqlAlchemyRepository[Product]):
             query = query.where(Product.price <= price_max)
         
         if slug:
-            query = query.where(Product.slug == slug)
+            query = query.join(Category, Product.category_id == Category.id).where(Category.slug == slug)
         
         if characteristics:
             query = (
