@@ -7,7 +7,6 @@ from app.infrastructure.database.models.base import Base
 from app.infrastructure.database.models.product import Product
 
 
-
 class Category(Base):
     __tablename__ = "categories"
 
@@ -36,6 +35,15 @@ class Category(Base):
         .correlate_except(Product)
         .scalar_subquery()
     ))
+
+    @property
+    def image_url(self):
+        if self.image:
+            return f"/static/images/{self.image}"
+        return None
+
+    def __admin_repr__(self, request):
+        return self.name
 
     def __repr__(self):
         return f"<Category(name='{self.name}', slug='{self.slug}')>"

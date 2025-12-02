@@ -43,6 +43,9 @@ class Product(Base):
     def __repr__(self):
         return self.name
 
+    def __admin_repr__(self, request):
+        return self.name
+
 
 class ProductImage(Base):
     __tablename__ = "product_images"

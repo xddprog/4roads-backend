@@ -1,3 +1,5 @@
+import json
+from json import dumps, loads
 from typing import Any, List
 from dataclasses import dataclass
 
@@ -9,13 +11,17 @@ from starlette.responses import Response, RedirectResponse
 from starlette.datastructures import FormData
 
 from starlette_admin import action
-from starlette_admin.fields import ImageField as BaseImageField, BaseField, StringField, EnumField
+from starlette_admin.fields import (ImageField as BaseImageField, BaseField, StringField, EnumField, IntegerField,
+                                    BooleanField, TextAreaField, NumberField, RelationField, HasOne, HasMany)
 from starlette_admin.contrib.sqla import Admin, ModelView
 from starlette_admin.exceptions import ActionFailed
 from starlette_admin._types import RequestAction
+from starlette_admin.auth import AdminUser, AuthProvider, AdminConfig
+from starlette_admin.exceptions import FormValidationError, LoginFailed
 
-from app.infrastructure.database.models.category import Category
+from app.core.services.image_service import ImageService
 from app.infrastructure.config.config import APP_CONFIG
+from app.infrastructure.database.models.category import Category
 from app.infrastructure.database.models.contact_form import ContactForm
 from app.infrastructure.database.models.faq import FAQ
 from app.infrastructure.database.models.product import (
@@ -27,7 +33,6 @@ from app.infrastructure.database.models.product import (
 from app.infrastructure.database.models.review import Review
 from app.infrastructure.database.models.settings import Settings
 from app.infrastructure.database.adapters.sync_connection import sync_engine
-
 from app.infrastructure.logging.logger import get_logger
 
 from app.utils.enums import CharacteristicTypeEnum
@@ -35,6 +40,8 @@ from app.utils.enums import CharacteristicTypeEnum
 Session = sessionmaker(bind=sync_engine)
 
 logger = get_logger(__name__)
+
+imgservice = ImageService()
 
 
 # -----------------------------------------------------------
@@ -52,7 +59,7 @@ class StaticImageField(BaseImageField):
             return None
         
         # Формируем полный URL к изображению
-        image_url = f"{APP_CONFIG.STATIC_URL}/{value}"
+        image_url = f"{APP_CONFIG.STATIC_URL}/images/{value}"
         
         return {
             "url": image_url,
@@ -78,31 +85,13 @@ class ProductImagesListField(BaseImageField):
         images = []
         for img in value:
             if hasattr(img, 'image_path') and img.image_path:
-                image_url = f"{APP_CONFIG.STATIC_URL}/{img.image_path}"
+                image_url = f"{APP_CONFIG.STATIC_URL}/images/{img.image_path}"
                 images.append({
                     "url": image_url,
                     "filename": str(img.image_path)
                 })
         
         return images[0] if images else None
-
-
-@dataclass
-class CategoryNameField(BaseField):
-    """Кастомное поле для отображения названия категории вместо UUID"""
-    
-    async def serialize_value(
-        self, request: Request, value: Any, action: RequestAction
-    ) -> str | None:
-        """Возвращает название категории"""
-        if not value:
-            return None
-        
-        # value - это объект Category
-        if hasattr(value, 'name'):
-            return value.name
-        
-        return None
 
 
 # -----------------------------------------------------------
@@ -112,20 +101,23 @@ class CategoryAdmin(ModelView):
     label = "Категория"
     label_plural = "Категории"
 
+    exclude_fields_from_create = ["products_count", "image"]
+    exclude_fields_from_edit = ["products_count", "image"]
+
     fields = [
-        StringField("id", label="ID"),
         StringField("name", label="Название"),
         StringField("slug", label="URL-адрес"),
-        StringField("description", label="Описание"),
+        TextAreaField("description", label="Описание"),
         StaticImageField("image", label="Изображение"),
-        StringField("products_count", label="Количество товаров")
+        NumberField("products_count", label="Количество товаров"),
+        HasMany("products", identity="products", label="Товары", required=True)
     ]
     
-    actions = ["discount_category", "remove_discount_categories"]
+    actions = ["discount_category", "remove_discount_categories", "upload_category_image"]
 
     @action(
         name="discount_category",
-        text="Сделать индивидуальную скидку",
+        text="Сделать скидку на выбранные категории",
         confirmation="Укажите размер скидки в процентах",
         submit_btn_text="Применить",
         submit_btn_class="btn-primary",
@@ -156,6 +148,10 @@ class CategoryAdmin(ModelView):
 
         try:
             session = Session()
+        except Exception as e:
+            raise ActionFailed(str(e))
+
+        try:
             result = session.query(Product).filter(Product.category_id.in_(pks)).all()
             logger.info(f"Result: {result}")
             logger.info(f"Selected pks: {pks}")
@@ -165,6 +161,7 @@ class CategoryAdmin(ModelView):
             session.commit()
             return f"Скидка {discount}% применена у выбранных категорий"
         except Exception as e:
+            session.rollback()
             raise ActionFailed(str(e))
 
     @action(
@@ -174,6 +171,10 @@ class CategoryAdmin(ModelView):
     async def remove_discount_categories(self, request: Request, pks: List[Any]) -> str:
         try:
             session = Session()
+        except Exception as e:
+            raise ActionFailed(str(e))
+
+        try:
             result = session.query(Product).filter(Product.category_id.in_(pks)).all()
             logger.info(f"Result: {result}")
             logger.info(f"Selected pks: {pks}")
@@ -184,6 +185,60 @@ class CategoryAdmin(ModelView):
             session.commit()
             return f"Скидка у выбранных категорий удалена"
         except Exception as e:
+            session.rollback()
+            raise ActionFailed(str(e))
+
+    @action(
+        name="upload_category_image",
+        text="Загрузить изображение",
+        confirmation="Выберите изображение для категории",
+        submit_btn_text="Загрузить",
+        submit_btn_class="btn-primary",
+        form="""
+        <form enctype="multipart/form-data">
+            <div class="mt-3">
+                <label>Изображение</label>
+                <input type="file"
+                       class="form-control"
+                       name="image"
+                       accept="image/*">
+            </div>
+        </form>
+        """
+    )
+    async def upload_category_image(self, request: Request, pks: List[Any]) -> str:
+        form = await request.form()
+        upload_file = form.get("image")
+
+        if not upload_file or upload_file.filename == "":
+            raise ActionFailed("Файл не выбран.")
+
+        if len(pks) != 1:
+            raise ActionFailed("Можно загружать изображение только для одной категории.")
+
+        category_id = pks[0]
+
+        try:
+            session = Session()
+        except Exception as e:
+            raise ActionFailed(str(e))
+
+        try:
+            category = session.query(Category).filter(Category.id == category_id).first()
+
+            if not category:
+                raise ActionFailed("Категория не найдена.")
+
+            image_path = await imgservice.upload_and_convert(
+                upload_file
+            )
+
+            category.image = image_path
+            session.commit()
+
+            return "Изображение успешно загружено!"
+        except Exception as e:
+            session.rollback()
             raise ActionFailed(str(e))
 
 
@@ -193,26 +248,25 @@ class CategoryAdmin(ModelView):
 class ProductAdmin(ModelView):
     label = "Товар"
     label_plural = "Товары"
-    
-    exclude_fields_from_list = ["characteristics", "reviews"]
-    exclude_fields_from_create = ["images", "characteristics", "reviews"]
-    exclude_fields_from_edit = ["images", "characteristics", "reviews"]
-    
+
+    exclude_fields_from_create = ["id", "images", "characteristics", "reviews"]
+    exclude_fields_from_edit = ["id", "images", "characteristics", "reviews"]
+
     fields = [
-        StringField("id", label="ID"),
         StringField("name", label="Название"),
         StringField("slug", label="URL-адрес"),
-        StringField("description", label="Описание"),
-        StringField("price", label="Цена"),
-        StringField("discount_percent", label="Скидка (%)"),
-        StringField("is_active", label="Активен"),
-        StringField("is_featured", label="Рекомендуемый"),
-        CategoryNameField("category", label="Категория"),  # Показываем название категории вместо UUID
+        TextAreaField("description", label="Описание"),
+        NumberField("price", label="Цена"),
+        NumberField("discount_percent", label="Скидка (%)"),
+        BooleanField("is_active", label="Активен"),
+        BooleanField("is_featured", label="Рекомендуемый"),
+        HasOne("category", label="Категория", identity="category"),
         ProductImagesListField("images", label="Изображения"),  # Показываем список изображений
-        StringField("characteristics", label="Характеристики"),
+        StringField("characteristics", label="Характеристики")
     ]
 
-    actions = ["discount_products", "remove_discount_products"]
+    actions = ["discount_products", "remove_discount_products", "move_to_category", "activate_products",
+               "deactivate_products"]
 
     @action(
         name="discount_products",
@@ -247,6 +301,10 @@ class ProductAdmin(ModelView):
 
         try:
             session = Session()
+        except Exception as e:
+            raise ActionFailed(str(e))
+
+        try:
             result = session.query(Product).filter(Product.id.in_(pks)).all()
             logger.info(f"Result: {result}")
             logger.info(f"Selected pks: {pks}")
@@ -256,6 +314,7 @@ class ProductAdmin(ModelView):
             session.commit()
             return f"Скидка {discount}% применена у выбранных товаров"
         except Exception as e:
+            session.rollback()
             raise ActionFailed(str(e))
 
     @action(
@@ -277,6 +336,100 @@ class ProductAdmin(ModelView):
         except Exception as e:
             raise ActionFailed(str(e))
 
+    @action(
+        name="move_to_category",
+        text="Перенести в категорию",
+        confirmation="Выберите категорию, в которую перенести товары",
+        submit_btn_text="Перенести",
+        submit_btn_class="btn-warning",
+        form=f"""
+            <form>
+                <div class="mt-3">
+                    <label>Категория</label>
+                    <select name="category_id" class="form-control">
+                        {"".join(f"""<option value="{cat.id}">{cat.name}</option>""" 
+                                 for cat in Session().query(Category).order_by(Category.name).all())}
+                    </select>
+                </div>
+            </form>
+        """
+    )
+    async def move_to_category(self, request: Request, pks: List[Any]) -> str:
+        form: FormData = await request.form()
+        category_id = form.get('category_id')
+
+        if not category_id:
+            raise ActionFailed("Категория не выбрана.")
+
+        logger.info(f"Категория: {category_id}")
+
+        try:
+            session = Session()
+        except Exception as e:
+            raise ActionFailed(str(e))
+
+        try:
+            products = session.query(Product).filter(Product.id.in_(pks)).all()
+            for product in products:
+                product.category_id = category_id
+            category_name = session.query(Category).where(Category.id == category_id).first()
+            session.commit()
+
+            return f"Товары перенесены в категорию {category_name.name}"
+
+        except Exception as e:
+            session.rollback()
+            raise ActionFailed(str(e))
+
+    @action(
+        name="activate_products",
+        text="Активировать товары",
+        confirmation="Активировать выбранные товары?",
+        submit_btn_text="Активировать",
+        submit_btn_class="btn-success",
+    )
+    async def activate_products(self, request: Request, pks: list[int]) -> str:
+        try:
+            session = Session()
+        except Exception as e:
+            raise ActionFailed(str(e))
+
+        try:
+            products = session.query(Product).filter(Product.id.in_(pks)).all()
+            for product in products:
+                product.is_active = True
+            session.commit()
+
+            return "Выбранные товары успешно активированы."
+        except Exception as e:
+            session.rollback()
+            raise ActionFailed(str(e))
+
+    @action(
+        name="deactivate_products",
+        text="Деактивировать товары",
+        confirmation="Отключить выбранные товары?",
+        submit_btn_text="Отключить",
+        submit_btn_class="btn-danger",
+    )
+    async def deactivate_products(self, request: Request, pks: list[int]) -> str:
+        try:
+            session = Session()
+        except Exception as e:
+            raise ActionFailed(str(e))
+
+        try:
+            products = session.query(Product).filter(Product.id.in_(pks)).all()
+            for product in products:
+                product.is_active = False
+                logger.info(f"Активность: {product.is_active}")
+            session.commit()
+
+            return "Выбранные товары успешно деактивированы."
+        except Exception as e:
+            session.rollback()
+            raise ActionFailed(str(e))
+
 
 # -----------------------------------------------------------
 # CONTACT FORM
@@ -289,8 +442,8 @@ class ContactFormAdmin(ModelView):
         StringField("id", label="ID"),
         StringField("name", label="Имя"),
         StringField("phone", label="Телефон"),
-        StringField("message", label="Сообщение"),
-        StringField("is_processed", label="Обработано")
+        TextAreaField("message", label="Сообщение"),
+        BooleanField("is_processed", label="Обработано")
     ]
 
 
@@ -305,7 +458,7 @@ class FAQAdmin(ModelView):
         StringField("id", label="ID"),
         StringField("question", label="Вопрос"),
         StringField("answer", label="Ответ"),
-        StringField("is_active", label="Активен")
+        BooleanField("is_active", label="Активен")
     ]
 
 
@@ -320,7 +473,7 @@ class ProductImageAdmin(ModelView):
         StringField("id", label="ID"),
         StringField("product", label="Товар"),
         StaticImageField("image_path", label="Изображение"),  # Используем кастомное поле для изображений
-        StringField("order", label="Порядок")
+        NumberField("order", label="Порядок")
     ]
 
 
@@ -331,15 +484,12 @@ class CharacteristicTypeAdmin(ModelView):
     label = "Тип характеристики"
     label_plural = "Типы характеристик"
     
-    
     fields = [
         StringField("id", label="ID"),
         EnumField("name", label="Название", choices=[(i, i.value) for i in CharacteristicTypeEnum]),
         StringField("slug", label="URL-адрес")
     ]
 
-    actions = []
-    
     def is_accessible(self, request: Request) -> bool:
         route = request.url.path.split("/")[-1]
         if route == "create":
@@ -349,6 +499,7 @@ class CharacteristicTypeAdmin(ModelView):
         if route == "delete":
             return False
         return True
+
 
 # -----------------------------------------------------------
 # PRODUCT CHARACTERISTIC
@@ -375,10 +526,10 @@ class ReviewAdmin(ModelView):
     fields = [
         StringField("id", label="ID"),
         StringField("author_name", label="Имя автора"),
-        StringField("content", label="Содержание"),
-        StringField("rating", label="Рейтинг"),
+        TextAreaField("content", label="Содержание"),
+        NumberField("rating", label="Рейтинг"),
         StaticImageField("image", label="Изображение"),  # Используем кастомное поле для изображений
-        StringField("is_active", label="Активен"),
+        BooleanField("is_active", label="Активен"),
         StringField("product", label="Товар")
     ]
 
@@ -414,13 +565,13 @@ def create_admin(engine):
     """
     admin = Admin(
         engine,
-        title="Админ-панель",
+        title="Админ-панель"
     )
 
-    admin.add_view(CategoryAdmin(Category))
+    admin.add_view(CategoryAdmin(Category, identity="category"))
     admin.add_view(ContactFormAdmin(ContactForm))
     admin.add_view(FAQAdmin(FAQ))
-    admin.add_view(ProductAdmin(Product))
+    admin.add_view(ProductAdmin(Product, identity="products"))
     admin.add_view(ProductImageAdmin(ProductImage))
     admin.add_view(CharacteristicTypeAdmin(CharacteristicType))
     admin.add_view(ProductCharacteristicAdmin(ProductCharacteristic))
