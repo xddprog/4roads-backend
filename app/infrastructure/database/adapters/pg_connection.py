@@ -1,11 +1,10 @@
-import time
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from app.infrastructure.config.config import DB_CONFIG
 from app.infrastructure.database.models.base import Base
 from app.utils.test_db import test_db
 
-import app.infrastructure.database.events  # noqa: F401  # noqa: F401
+import app.infrastructure.database.events  # noqa: F401  
 
 
 class DatabaseConnection:
@@ -19,7 +18,6 @@ class DatabaseConnection:
         
     async def init_test_db(self):
         async with self._engine.begin() as conn:
-            time.sleep(5)
             await conn.run_sync(Base.metadata.create_all)
         async with await self.get_session() as session:
             await test_db(session)

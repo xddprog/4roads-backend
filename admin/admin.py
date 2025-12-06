@@ -44,6 +44,20 @@ logger = get_logger(__name__)
 imgservice = ImageService()
 
 
+def get_product_form():
+    return f"""
+            <form>
+                <div class="mt-3">
+                    <label>Категория</label>
+                    <select name="category_id" class="form-control">
+                        {"".join(f"""<option value="{cat.id}">{cat.name}</option>""" 
+                                 for cat in Session().query(Category).order_by(Category.name).all())}
+                    </select>
+                </div>
+            </form>
+        """
+
+
 # -----------------------------------------------------------
 # CUSTOM FIELDS
 # -----------------------------------------------------------
@@ -342,17 +356,7 @@ class ProductAdmin(ModelView):
         confirmation="Выберите категорию, в которую перенести товары",
         submit_btn_text="Перенести",
         submit_btn_class="btn-warning",
-        form=f"""
-            <form>
-                <div class="mt-3">
-                    <label>Категория</label>
-                    <select name="category_id" class="form-control">
-                        {"".join(f"""<option value="{cat.id}">{cat.name}</option>""" 
-                                 for cat in Session().query(Category).order_by(Category.name).all())}
-                    </select>
-                </div>
-            </form>
-        """
+        form=lambda: get_product_form()
     )
     async def move_to_category(self, request: Request, pks: List[Any]) -> str:
         form: FormData = await request.form()
