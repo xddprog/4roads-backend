@@ -10,13 +10,14 @@ from starlette.requests import Request
 from starlette.responses import Response, RedirectResponse
 from starlette.datastructures import FormData
 
-from starlette_admin import action
+from starlette_admin import action, I18nConfig
 from starlette_admin.fields import (ImageField as BaseImageField, BaseField, StringField, EnumField, IntegerField,
                                     BooleanField, TextAreaField, NumberField, RelationField, HasOne, HasMany)
 from starlette_admin.contrib.sqla import Admin, ModelView
 from starlette_admin.exceptions import ActionFailed
 from starlette_admin._types import RequestAction
 from starlette_admin.auth import AdminUser, AuthProvider, AdminConfig
+from starlette_admin.i18n import SUPPORTED_LOCALES
 from starlette_admin.exceptions import FormValidationError, LoginFailed
 
 from app.core.services.image_service import ImageService
@@ -263,8 +264,9 @@ class ProductAdmin(ModelView):
     label = "Товар"
     label_plural = "Товары"
 
-    exclude_fields_from_create = ["id", "images", "characteristics", "reviews"]
-    exclude_fields_from_edit = ["id", "images", "characteristics", "reviews"]
+    exclude_fields_from_create = ["id", "reviews"]
+    exclude_fields_from_edit = ["id", "reviews"]
+    exclude_fields_from_list = ["description", "images", "characteristics", "reviews"]
 
     fields = [
         StringField("name", label="Название"),
@@ -275,9 +277,13 @@ class ProductAdmin(ModelView):
         BooleanField("is_active", label="Активен"),
         BooleanField("is_featured", label="Рекомендуемый"),
         HasOne("category", label="Категория", identity="category"),
-        ProductImagesListField("images", label="Изображения"),  # Показываем список изображений
-        StringField("characteristics", label="Характеристики")
+        ProductImagesListField("images", label="Изображения"),
+        HasMany("images", identity="product-image", label="Изображения товара"),
+        HasMany("characteristics", identity="product-characteristic", label="Характеристики")
     ]
+
+    searchable_fields = [Product.name, Product.slug]
+    sortable_fields = [Product.name, Product.price, Product.discount_percent, Product.is_active, Product.is_featured]
 
     actions = ["discount_products", "remove_discount_products", "move_to_category", "activate_products",
                "deactivate_products"]
@@ -475,7 +481,7 @@ class ProductImageAdmin(ModelView):
     
     fields = [
         StringField("id", label="ID"),
-        StringField("product", label="Товар"),
+        HasOne("product", label="Товар", identity="products"),
         StaticImageField("image_path", label="Изображение"),  # Используем кастомное поле для изображений
         NumberField("order", label="Порядок")
     ]
@@ -515,8 +521,8 @@ class ProductCharacteristicAdmin(ModelView):
     fields = [
         StringField("id", label="ID"),
         StringField("value", label="Значение"),
-        StringField("product", label="Товар"),
-        StringField("characteristic_type", label="Тип характеристики")
+        HasOne("product", label="Товар", identity="products"),
+        HasOne("characteristic_type", label="Тип характеристики", identity="characteristic-type")
     ]
 
 
@@ -567,9 +573,16 @@ def create_admin(engine):
     Создание админки для FastAPI.
     Версия старлет-админ < 0.18 → синтаксис старый.
     """
+    default_locale = "ru" if "ru" in SUPPORTED_LOCALES else "en"
+    i18n_config = I18nConfig(
+        default_locale=default_locale,
+        language_switcher=[default_locale],
+    )
+
     admin = Admin(
         engine,
-        title="Админ-панель"
+        title="Админ-панель",
+        i18n_config=i18n_config,
     )
 
     admin.add_view(CategoryAdmin(Category, identity="category"))

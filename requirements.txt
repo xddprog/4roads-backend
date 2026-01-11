@@ -16,3 +16,4 @@ python-multipart
 structlog
 python-slugify
 starlette_admin
+babel
