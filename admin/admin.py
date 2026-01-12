@@ -86,27 +86,127 @@ class StaticImageField(BaseImageField):
 class ProductImagesListField(BaseImageField):
     """Кастомное поле для отображения списка изображений продукта"""
     
+    multiple: bool = True  # Явно устанавливаем multiple как атрибут класса
+    
     def __init__(self, name: str, label: str | None = None):
-        super().__init__(name)
+        super().__init__(name, multiple=True)  # Включаем поддержку множественных файлов
+        self.multiple = True  # Гарантируем что multiple установлен
         if label:
             self.label = label
     
     async def serialize_value(
         self, request: Request, value: Any, action: RequestAction
-    ) -> list[dict] | None:
+    ) -> list[dict]:
+        # ВСЕГДА возвращаем список, даже если пустой
         if not value:
-            return None
+            return []
         
         images = []
         for img in value:
             if hasattr(img, 'image_path') and img.image_path:
                 image_url = f"{APP_CONFIG.STATIC_URL}/images/{img.image_path}"
+                # Извлекаем только имя файла без пути для отображения
+                filename = img.image_path.split('/')[-1] if '/' in img.image_path else img.image_path
                 images.append({
                     "url": image_url,
-                    "filename": str(img.image_path)
+                    "filename": filename,
+                    "content-type": "image/webp"
                 })
         
-        return images[0] if images else None
+        return images
+    
+    async def parse_form_data(
+        self, request: Request, form_data: FormData, action: RequestAction
+    ) -> tuple[Any, bool]:
+        """Получаем существующие изображения, обрабатываем удаление и добавляем новые"""
+        from app.infrastructure.database.models.product import ProductImage, Product
+        
+        # Проверяем, нажата ли кнопка удаления всех изображений
+        should_delete_all = form_data.get(f"_{self.name}-delete") == "on"
+        if should_delete_all:
+            print("✓ Запрошено удаление всех изображений")
+            product_id = request.path_params.get('pk')
+            db_session = getattr(request.state, 'session', None)
+            
+            if product_id and action == RequestAction.EDIT and db_session:
+                try:
+                    product = db_session.get(Product, product_id)
+                    if product and product.images:
+                        # Удаляем физические файлы и записи из БД
+                        images_to_delete = list(product.images)
+                        for img in images_to_delete:
+                            if img.image_path:
+                                try:
+                                    await imgservice.delete_image(img.image_path)
+                                    print(f"✓ Удален файл: {img.image_path}")
+                                except Exception as e:
+                                    print(f"✗ Ошибка удаления файла {img.image_path}: {e}")
+                            
+                            # Удаляем запись из БД вручную
+                            db_session.delete(img)
+                        
+                        # Очищаем коллекцию, чтобы SQLAlchemy не ругался
+                        product.images.clear()
+                        
+                        db_session.flush()  # Применяем изменения в рамках транзакции
+                        print(f"✓ Удалено {len(images_to_delete)} изображений из БД")
+                except Exception as e:
+                    print(f"✗ Ошибка при удалении изображений: {e}")
+            
+            # Возвращаем пустой список
+            return ([], False)
+        
+        # Получаем product_id из URL
+        product_id = request.path_params.get('pk')
+        
+        # Получаем сессию starlette-admin из request.state
+        db_session = getattr(request.state, 'session', None)
+        
+        existing_images = []
+        max_order = -1
+        
+        # Загружаем существующие изображения из ТЕКУЩЕЙ сессии starlette-admin
+        if product_id and action == RequestAction.EDIT and db_session:
+            try:
+                # Используем ту же сессию, что и starlette-admin
+                product = db_session.get(Product, product_id)
+                if product and product.images:
+                    # Получаем существующие изображения из ЭТОЙ же сессии
+                    existing_images = list(product.images)
+                    max_order = max([img.order for img in existing_images], default=-1)
+                    print(f"✓ Найдено существующих изображений: {len(existing_images)}, max_order: {max_order}")
+            except Exception as e:
+                print(f"✗ Ошибка получения существующих изображений: {e}")
+        
+        # Получаем загруженные файлы
+        files = form_data.getlist(self.name)
+        
+        # Если нет новых файлов, возвращаем существующие (или пустой список)
+        if not files or not any(hasattr(f, 'filename') and f.filename for f in files):
+            return (existing_images if existing_images else [], False)
+        
+        # Создаём новые ProductImage объекты и добавляем к существующим
+        order = max_order + 1
+        
+        for file in files:
+            if hasattr(file, 'filename') and file.filename:
+                try:
+                    image_path = await imgservice.upload_and_convert(file, subfolder="products")
+                    
+                    product_image = ProductImage(
+                        image_path=image_path,
+                        order=order
+                    )
+                    existing_images.append(product_image)
+                    order += 1
+                    
+                    print(f"✓ Изображение загружено: {image_path}, order: {product_image.order}")
+                except Exception as e:
+                    print(f"✗ Ошибка загрузки изображения: {e}")
+        
+        # Возвращаем ВСЕ изображения: старые + новые
+        print(f"✓ Возвращаем всего изображений: {len(existing_images)}")
+        return (existing_images, False)
 
 
 # -----------------------------------------------------------
@@ -277,8 +377,7 @@ class ProductAdmin(ModelView):
         BooleanField("is_active", label="Активен"),
         BooleanField("is_featured", label="Рекомендуемый"),
         HasOne("category", label="Категория", identity="category"),
-        ProductImagesListField("images", label="Изображения"),
-        HasMany("images", identity="product-image", label="Изображения товара"),
+        ProductImagesListField("images", label="Изображения (можно выбрать несколько)"),
         HasMany("characteristics", identity="product-characteristic", label="Характеристики")
     ]
 
@@ -583,6 +682,7 @@ def create_admin(engine):
         engine,
         title="Админ-панель",
         i18n_config=i18n_config,
+        debug=True,
     )
 
     admin.add_view(CategoryAdmin(Category, identity="category"))

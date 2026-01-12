@@ -1,11 +1,15 @@
-from sqlalchemy import event, inspect
+from sqlalchemy import event
 from sqlalchemy.orm import Session, with_loader_criteria
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.database.models.base import Base
 
 
 @event.listens_for(Session, "do_orm_execute")
 def _filter_by_is_active(execute_state):
+    session = execute_state.session
+    if not isinstance(session, AsyncSession):
+        return
     
     if not execute_state.is_select:
         return
