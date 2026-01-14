@@ -1,42 +1,27 @@
 - Goal (критерии успеха):
-  - Перенести товары с 4roads.su в админку проекта через веб-интерфейс, добавить характеристики (Размер, Материал и т.д.) для уже созданных товаров.
+  - Починить деплой (Postgres auth) и корректные https-ссылки на статику админки на 4roads.su.
 - Constraints/Assumptions:
   - В начале каждого хода читать и обновлять `CONTINUITY.md`.
-  - Использовать MCP Firefox DevTools для работы в браузере.
-  - Нет сетевого доступа из shell без аппрува; веб-переходы только через браузерный MCP.
-  - Админка доступна без пароля (по словам пользователя).
+  - Нет сетевого доступа из shell без аппрува.
+  - Доступ к конфигу Nginx есть, приведен текущий файл `/etc/nginx/sites-enabled/4roads.su`.
 - Key decisions:
-  - Ожидается перенос вручную/полуавтоматически через админку в браузере (не скриптом).
-  - Характеристики нужно добавлять по названию/описанию товаров.
+  - UNCONFIRMED: Нужен отдельный location для статики админки (`/admin/static/`) и корректный `alias` на STATIC_ROOT.
 - State:
   - Done:
-    - Прочитан текущий CONTINUITY.md и зафиксирован новый запрос.
-    - Открыт каталог 4roads.su в Firefox DevTools.
-    - Попытка открыть список товаров в админке по URL /admin/product/list дала 404 (model product not found).
-    - Страница /admin/product-image/list открывается, но дерево доступности в Firefox показывает только заголовок/хлебные крошки (таблица/навигация не видны).
-    - Пользователь дал URL для create: /admin/products/create, /admin/product-image/create, /admin/product-characteristic/create.
-    - Firecrawl scrape каталога page=1 и page=2 успешен, видны ссылки на товары и цены.
-    - Добавлен скрипт `app/utils/import_4roads_full.py` для scrape+export JSON и import с характеристиками.
-    - Через Playwright проверена структура: на каталоге ссылки товаров в `a.inner.row.middle-xl`; на карточке цена в `.price.js-product-price`, старая цена в `.old-price.js-product-old-price`, размер/цвет в `.option-razmer`/`.option-cvet`, описание в `#product-description`.
-    - Обновлен `app/utils/import_4roads_full.py` под эти селекторы и фильтр изображений `/images/products/`.
-    - В админке добавлена i18n конфигурация: `I18nConfig` с ru (если поддерживается) иначе en.
-    - Добавлен `babel` в `requirements.txt` для работы i18n в starlette-admin.
-    - Исправлен `download_image` для URL с кириллицей (percent-encoding) в `app/utils/import_4roads_full.py`.
-    - ProductAdmin: исключены тяжелые связи из list view, добавлен поиск/сортировка.
+    - Прочитан текущий `CONTINUITY.md`.
+    - Получен текущий Nginx конфиг для `4roads.su`.
+    - Проверка `curl -I` показала 404 для `https://4roads.su/admin/statics/main.css` и `https://4roads.su/static/anything.css`.
+    - Пользователь подтвердил неверный `STATIC_URL` (http вместо https) в `.env`.
+    - Пользователь показал prod `.env` с `DB_PASS=postgres` и `STATIC_URL=https://4roads.su/static`.
+    - Пользователь указал, что админка запрашивает статику по http (например `http://4roads.su/admin/statics/...`).
+    - Найден `docker-compose.yml`: app запускает uvicorn без `--proxy-headers` и переопределяет `STATIC_URL` на `http://localhost:8000/static`.
   - Now:
-    - Пользователь дал точные URL: /admin/products/detail/{id} и /admin/products/edit/{id}.
-    - Получен список оставшихся товаров и примеры характеристик (Размер/Материал/Цвет).
-    - Нужно завершить сбор данных (каталог/карточки) и запустить новый скрипт.
-    - Пользователь просит оценить неудобства админки и предложить улучшения (связи вместо текстовых полей).
-- Next:
-    - Дособрать данные карточек (Playwright/скрипт) и экспортировать JSON.
-    - Запустить import по JSON (с учетом характеристик и изображений).
+    - Исправить генерацию http URL в админке (вероятно не учитывается `X-Forwarded-Proto`).
+  - Next:
+    - Проверить прокси-настройки uvicorn/Starlette (proxy headers) и при необходимости добавить middleware.
+    - Вернуться к теме Postgres auth, если все еще актуально.
 - Open questions (UNCONFIRMED если нужно):
-  - Какие именно характеристики считаются обязательными (список полей) и их формат?
-  - Где в админке редактировать характеристики (в карточке товара или отдельной сущности)?
-  - Можно ли использовать Chrome DevTools MCP, если Firefox не отображает элементы админки?
-  - Нужен ли импорт изображений (реальные с 4roads) или пока оставлять заглушки?
+  - Как запускается приложение в проде (команда uvicorn/гунicorn) и есть ли флаги `--proxy-headers`?
 - Working set (files/ids/commands):
   - `CONTINUITY.md`
-  - web: https://4roads.su/collection/vse-kollektsii
-  - admin: http://109.69.23.167:8000/admin/product-image/list?page=1&page_size=100&search=&order=id
+  - `/etc/nginx/sites-enabled/4roads.su` (from user)
