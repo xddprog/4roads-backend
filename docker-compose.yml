@@ -40,8 +40,8 @@ services:
 
       - APP_NAME=4roads API
       - DEBUG=true
-      - STATIC_URL=http://localhost:8000/static
-      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:8000
+      - STATIC_URL=https://4roads.su/static
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:8000,https://4roads.su
       - SITEMAP_PASSWORD=m_8jMpDsZ09yF1AphJnnEOg_zW0UOe4KXM4cvr_BkvY
       
       - MAX_IMAGE_SIZE_MB=10
@@ -57,7 +57,7 @@ services:
       - ./static:/app/static
     command: >
       sh -c "alembic upgrade head &&
-             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'"
 networks:
   app-network:
     driver: bridge
