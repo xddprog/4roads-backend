@@ -653,9 +653,33 @@ def import_products(
             if status != "skipped":
                 upsert_characteristics(session, product, data.get("characteristics", {}))
 
+            # Удаляем старые изображения и файлы при обновлении с refresh_images
             if refresh_images and status != "skipped":
+                # Получаем пути к файлам перед удалением записей из БД
+                old_images = session.scalars(
+                    select(ProductImage).where(ProductImage.product_id == product.id)
+                ).all()
+                images_dir = Path(APP_CONFIG.IMAGES_DIR)
+                
+                # Удаляем файлы с диска
+                deleted_files = 0
+                for old_img in old_images:
+                    old_file_path = images_dir / old_img.image_path
+                    if old_file_path.exists():
+                        try:
+                            old_file_path.unlink()
+                            deleted_files += 1
+                        except Exception as exc:
+                            print(f"[{index}] failed to delete old image file {old_file_path}: {exc}")
+                
+                if deleted_files > 0:
+                    print(f"[{index}] deleted {deleted_files} old image file(s)")
+                
+                # Удаляем записи из БД
                 session.execute(delete(ProductImage).where(ProductImage.product_id == product.id))
+                session.flush()
 
+            # Добавляем изображения только для новых продуктов или при явном refresh_images
             if status == "created" or (refresh_images and status != "skipped"):
                 images_dir = Path(APP_CONFIG.IMAGES_DIR) / "products"
                 for order, image_url in enumerate(data.get("images", [])):

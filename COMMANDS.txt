@@ -1,0 +1,78 @@
+═══════════════════════════════════════════════════════════════
+  КОМАНДЫ ДЛЯ ИМПОРТА ПРОДУКТОВ 4ROADS
+═══════════════════════════════════════════════════════════════
+
+📋 ОСНОВНЫЕ КОМАНДЫ:
+
+1️⃣ Простой импорт (рекомендуется):
+   ./import_products.sh
+
+2️⃣ С обновлением изображений:
+   ./import_products.sh --refresh
+
+3️⃣ Тестовый запуск (1 страница, без сохранения):
+   ./import_products.sh --dry-run --max-pages 1
+
+4️⃣ Очистка дублей изображений:
+   ./import_products.sh --cleanup
+
+5️⃣ Справка по всем опциям:
+   ./import_products.sh --help
+
+───────────────────────────────────────────────────────────────
+
+📦 АЛЬТЕРНАТИВА (прямой запуск Python):
+
+1️⃣ Базовый импорт:
+   python3 -m app.utils.import_4roads_full \
+     --collection-url https://4roads.su/collection/vse-kollektsii
+
+2️⃣ С ограничением страниц:
+   python3 -m app.utils.import_4roads_full \
+     --collection-url https://4roads.su/collection/vse-kollektsii \
+     --max-pages 5
+
+3️⃣ С обновлением изображений:
+   python3 -m app.utils.import_4roads_full \
+     --collection-url https://4roads.su/collection/vse-kollektsii \
+     --refresh-images
+
+4️⃣ Тестовый запуск:
+   python3 -m app.utils.import_4roads_full \
+     --collection-url https://4roads.su/collection/vse-kollektsii \
+     --dry-run \
+     --max-pages 1
+
+───────────────────────────────────────────────────────────────
+
+🧹 ОЧИСТКА ДУБЛЕЙ:
+
+1️⃣ Показать список дублей:
+   python3 -m app.utils.cleanup_orphaned_images
+
+2️⃣ Удалить дубли:
+   python3 -m app.utils.cleanup_orphaned_images --execute
+
+───────────────────────────────────────────────────────────────
+
+🎯 РЕКОМЕНДУЕМЫЙ ПОРЯДОК (первый запуск):
+
+1. Проверить дубли:
+   python3 -m app.utils.cleanup_orphaned_images
+
+2. Удалить дубли если есть:
+   python3 -m app.utils.cleanup_orphaned_images --execute
+
+3. Запустить импорт:
+   ./import_products.sh
+
+───────────────────────────────────────────────────────────────
+
+📚 ДОКУМЕНТАЦИЯ:
+
+   cat QUICK_START.md          - Подробная инструкция
+   cat IMPORT_IMAGES_FIX.md    - Про исправление багов
+   cat README.md               - Общая документация
+
+═══════════════════════════════════════════════════════════════
+
