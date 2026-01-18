@@ -16,9 +16,10 @@ from starlette_admin.fields import (ImageField as BaseImageField, BaseField, Str
 from starlette_admin.contrib.sqla import Admin, ModelView
 from starlette_admin.exceptions import ActionFailed
 from starlette_admin._types import RequestAction
-from starlette_admin.auth import AdminUser, AuthProvider, AdminConfig
+from starlette_admin.auth import AdminUser, AuthProvider, AdminConfig, AuthMiddleware
 from starlette_admin.i18n import SUPPORTED_LOCALES
 from starlette_admin.exceptions import FormValidationError, LoginFailed
+import secrets
 
 from app.core.services.image_service import ImageService
 from app.infrastructure.config.config import APP_CONFIG
@@ -665,6 +666,71 @@ class SettingsAdmin(ModelView):
 
 
 # -----------------------------------------------------------
+# AUTH PROVIDER
+# -----------------------------------------------------------
+class MyAuthProvider(AuthProvider):
+    """
+    Простой провайдер авторизации для админ-панели.
+    Использует логин/пароль из переменных окружения или значения по умолчанию.
+    """
+    
+    def setup_admin(self, admin) -> None:
+        """Настройка админ-панели - добавляем middleware и роуты для login/logout"""
+        # Добавляем middleware для авторизации
+        admin.middlewares.append(self.get_middleware(admin=admin))
+        
+        # Добавляем роуты для login и logout
+        login_route = self.get_login_route(admin=admin)
+        logout_route = self.get_logout_route(admin=admin)
+        
+        # Устанавливаем имена роутов
+        login_route.name = "login"
+        logout_route.name = "logout"
+        
+        # Добавляем роуты в админку
+        admin.routes.extend([login_route, logout_route])
+    
+    async def login(
+        self,
+        username: str,
+        password: str,
+        remember_me: bool,
+        request: Request,
+        response: Response,
+    ) -> Response:
+        """Проверка логина и пароля"""
+        # Получаем логин/пароль из конфига
+        admin_username = APP_CONFIG.ADMIN_USERNAME
+        admin_password = APP_CONFIG.ADMIN_PASSWORD
+        
+        if username == admin_username and password == admin_password:
+            # Генерируем токен сессии
+            token = secrets.token_urlsafe(32)
+            request.session.update({"token": token, "username": username})
+            return response
+        
+        raise LoginFailed("Неверный логин или пароль")
+    
+    async def is_authenticated(self, request: Request) -> bool:
+        """Проверка авторизован ли пользователь"""
+        token = request.session.get("token")
+        return token is not None
+    
+    def get_admin_user(self, request: Request) -> AdminUser | None:
+        """Получить текущего пользователя"""
+        username = request.session.get("username")
+        if not username:
+            return None
+        
+        return AdminUser(username=username)
+    
+    async def logout(self, request: Request, response: Response) -> Response:
+        """Выход из системы"""
+        request.session.clear()
+        return response
+
+
+# -----------------------------------------------------------
 # INIT
 # -----------------------------------------------------------
 def create_admin(engine):
@@ -678,10 +744,17 @@ def create_admin(engine):
         language_switcher=[default_locale],
     )
 
+    # Создаем провайдер авторизации
+    auth_provider = MyAuthProvider()
+    
     admin = Admin(
         engine,
-        title="Админ-панель",
+        title="Админ-панель 4Roads",
+        base_url="/admin",
+        route_name="admin",
         i18n_config=i18n_config,
+        auth_provider=auth_provider,
+        middlewares=[],  # Middleware будет добавлен через mount_to
         debug=True,
     )
 

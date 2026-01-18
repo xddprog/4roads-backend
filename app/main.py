@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
 
 from app.api.v1.routers import api_v1_routers
 from app.infrastructure.database.adapters.pg_connection import DatabaseConnection
@@ -49,6 +50,13 @@ app.add_middleware(
 )
 
 app.add_middleware(LoggingMiddleware)
+
+# SessionMiddleware для работы авторизации в админ-панели
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=APP_CONFIG.ADMIN_PASSWORD,  # Используем пароль админа как секретный ключ
+    max_age=3600 * 24 * 7,  # 24 часа
+)
 
 static_dir = Path(APP_CONFIG.STATIC_DIR)
 if not static_dir.exists():

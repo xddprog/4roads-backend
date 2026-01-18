@@ -46,6 +46,10 @@ services:
       
       - MAX_IMAGE_SIZE_MB=10
       - WEBP_QUALITY=85
+      
+      # Admin panel
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin123
     depends_on:
       db: 
         condition: service_healthy

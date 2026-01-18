@@ -57,6 +57,10 @@ class AppConfig(Config):
     CORS_ALLOWED_ORIGINS: str = Field(default="http://localhost:3000,http://localhost:5173")
     
     SITEMAP_PASSWORD: str = Field(default="change-me-sitemap-secret")
+    
+    # Админ-панель
+    ADMIN_USERNAME: str = Field(default="admin")
+    ADMIN_PASSWORD: str = Field(default="admin123")
 
 
 class Settings(Config):

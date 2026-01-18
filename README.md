@@ -14,6 +14,15 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
+### Доступ к админ-панели
+```
+URL: http://localhost:8000/admin
+Логин: admin
+Пароль: admin123
+```
+
+⚠️ **Важно:** Измените пароль для production! См. [ADMIN_AUTH.md](ADMIN_AUTH.md)
+
 ## 📦 Импорт данных
 
 > 💡 **Подробная инструкция**: См. [QUICK_START.md](QUICK_START.md)
@@ -60,6 +69,7 @@ python3 -m app.utils.cleanup_orphaned_images --execute
 ## 📚 Документация
 
 - 🚀 [QUICK_START.md](QUICK_START.md) - **Быстрый старт: импорт продуктов**
+- 🔐 [ADMIN_AUTH.md](ADMIN_AUTH.md) - **Авторизация в админ-панели**
 - 🛠️ [IMPORT_IMAGES_FIX.md](IMPORT_IMAGES_FIX.md) - Исправление багов с дублированием изображений
 - 👨‍💼 [ADMIN_PANEL.md](ADMIN_PANEL.md) - Документация по админ-панели
 - 📝 [CONTINUITY.md](CONTINUITY.md) - История разработки
