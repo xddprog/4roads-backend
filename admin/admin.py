@@ -373,8 +373,8 @@ class ProductAdmin(ModelView):
         StringField("name", label="Название"),
         StringField("slug", label="URL-адрес"),
         TextAreaField("description", label="Описание"),
-        NumberField("price", label="Цена"),
-        NumberField("discount_percent", label="Скидка (%)"),
+        IntegerField("price", label="Цена (в рублях)"),
+        IntegerField("discount_percent", label="Скидка (%)"),
         BooleanField("is_active", label="Активен"),
         BooleanField("is_featured", label="Рекомендуемый"),
         HasOne("category", label="Категория", identity="category"),
@@ -539,6 +539,40 @@ class ProductAdmin(ModelView):
         except Exception as e:
             session.rollback()
             raise ActionFailed(str(e))
+    
+    async def before_create(self, request: Request, data: dict, obj: Any) -> None:
+        """Валидация и преобразование данных перед созданием"""
+        # Преобразуем цену в int если пришла строка
+        if "price" in data and isinstance(data["price"], str):
+            try:
+                data["price"] = int(data["price"])
+            except (ValueError, TypeError):
+                raise FormValidationError({"price": "Цена должна быть целым числом"})
+        
+        # Преобразуем discount_percent в int если пришла строка
+        if "discount_percent" in data and data["discount_percent"]:
+            if isinstance(data["discount_percent"], str):
+                try:
+                    data["discount_percent"] = int(data["discount_percent"])
+                except (ValueError, TypeError):
+                    raise FormValidationError({"discount_percent": "Скидка должна быть целым числом"})
+    
+    async def before_edit(self, request: Request, data: dict, obj: Any) -> None:
+        """Валидация и преобразование данных перед обновлением"""
+        # Преобразуем цену в int если пришла строка
+        if "price" in data and isinstance(data["price"], str):
+            try:
+                data["price"] = int(data["price"])
+            except (ValueError, TypeError):
+                raise FormValidationError({"price": "Цена должна быть целым числом"})
+        
+        # Преобразуем discount_percent в int если пришла строка
+        if "discount_percent" in data and data["discount_percent"]:
+            if isinstance(data["discount_percent"], str):
+                try:
+                    data["discount_percent"] = int(data["discount_percent"])
+                except (ValueError, TypeError):
+                    raise FormValidationError({"discount_percent": "Скидка должна быть целым числом"})
 
 
 # -----------------------------------------------------------
