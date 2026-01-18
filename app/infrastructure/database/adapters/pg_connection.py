@@ -19,7 +19,7 @@ class DatabaseConnection:
     async def init_test_db(self):
         async with self._engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        async with await self.get_session() as session:
-            await test_db(session)
+        # async with await self.get_session() as session:
+        #     await test_db(session)
         
     

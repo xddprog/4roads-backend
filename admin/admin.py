@@ -221,12 +221,12 @@ class CategoryAdmin(ModelView):
     exclude_fields_from_edit = ["products_count", "image"]
 
     fields = [
-        StringField("name", label="Название"),
-        StringField("slug", label="URL-адрес"),
+        StringField("name", label="Название", required=True),
+        StringField("slug", label="URL-адрес", required=True),
         TextAreaField("description", label="Описание"),
         StaticImageField("image", label="Изображение"),
         NumberField("products_count", label="Количество товаров"),
-        HasMany("products", identity="products", label="Товары", required=True)
+        HasMany("products", identity="products", label="Товары")
     ]
     
     actions = ["discount_category", "remove_discount_categories", "upload_category_image"]
@@ -370,14 +370,14 @@ class ProductAdmin(ModelView):
     exclude_fields_from_list = ["description", "images", "characteristics", "reviews"]
 
     fields = [
-        StringField("name", label="Название"),
-        StringField("slug", label="URL-адрес"),
+        StringField("name", label="Название", required=True),
+        StringField("slug", label="URL-адрес", required=True),
         TextAreaField("description", label="Описание"),
-        IntegerField("price", label="Цена (в рублях)"),
+        IntegerField("price", label="Цена", required=True),
         IntegerField("discount_percent", label="Скидка (%)"),
         BooleanField("is_active", label="Активен"),
         BooleanField("is_featured", label="Рекомендуемый"),
-        HasOne("category", label="Категория", identity="category"),
+        HasOne("category", label="Категория", identity="category", required=True),
         ProductImagesListField("images", label="Изображения (можно выбрать несколько)"),
         HasMany("characteristics", identity="product-characteristic", label="Характеристики")
     ]
@@ -539,40 +539,6 @@ class ProductAdmin(ModelView):
         except Exception as e:
             session.rollback()
             raise ActionFailed(str(e))
-    
-    async def before_create(self, request: Request, data: dict, obj: Any) -> None:
-        """Валидация и преобразование данных перед созданием"""
-        # Преобразуем цену в int если пришла строка
-        if "price" in data and isinstance(data["price"], str):
-            try:
-                data["price"] = int(data["price"])
-            except (ValueError, TypeError):
-                raise FormValidationError({"price": "Цена должна быть целым числом"})
-        
-        # Преобразуем discount_percent в int если пришла строка
-        if "discount_percent" in data and data["discount_percent"]:
-            if isinstance(data["discount_percent"], str):
-                try:
-                    data["discount_percent"] = int(data["discount_percent"])
-                except (ValueError, TypeError):
-                    raise FormValidationError({"discount_percent": "Скидка должна быть целым числом"})
-    
-    async def before_edit(self, request: Request, data: dict, obj: Any) -> None:
-        """Валидация и преобразование данных перед обновлением"""
-        # Преобразуем цену в int если пришла строка
-        if "price" in data and isinstance(data["price"], str):
-            try:
-                data["price"] = int(data["price"])
-            except (ValueError, TypeError):
-                raise FormValidationError({"price": "Цена должна быть целым числом"})
-        
-        # Преобразуем discount_percent в int если пришла строка
-        if "discount_percent" in data and data["discount_percent"]:
-            if isinstance(data["discount_percent"], str):
-                try:
-                    data["discount_percent"] = int(data["discount_percent"])
-                except (ValueError, TypeError):
-                    raise FormValidationError({"discount_percent": "Скидка должна быть целым числом"})
 
 
 # -----------------------------------------------------------
@@ -584,9 +550,9 @@ class ContactFormAdmin(ModelView):
     
     fields = [
         StringField("id", label="ID"),
-        StringField("name", label="Имя"),
-        StringField("phone", label="Телефон"),
-        TextAreaField("message", label="Сообщение"),
+        StringField("name", label="Имя", required=True),
+        StringField("phone", label="Телефон", required=True),
+        TextAreaField("message", label="Сообщение", required=True),
         BooleanField("is_processed", label="Обработано")
     ]
 
@@ -600,8 +566,8 @@ class FAQAdmin(ModelView):
     
     fields = [
         StringField("id", label="ID"),
-        StringField("question", label="Вопрос"),
-        StringField("answer", label="Ответ"),
+        StringField("question", label="Вопрос", required=True),
+        TextAreaField("answer", label="Ответ", required=True),
         BooleanField("is_active", label="Активен")
     ]
 
@@ -615,9 +581,9 @@ class ProductImageAdmin(ModelView):
     
     fields = [
         StringField("id", label="ID"),
-        HasOne("product", label="Товар", identity="products"),
-        StaticImageField("image_path", label="Изображение"),  # Используем кастомное поле для изображений
-        NumberField("order", label="Порядок")
+        HasOne("product", label="Товар", identity="products", required=True),
+        StaticImageField("image_path", label="Изображение", required=True),
+        IntegerField("order", label="Порядок")
     ]
 
 
@@ -654,9 +620,9 @@ class ProductCharacteristicAdmin(ModelView):
     
     fields = [
         StringField("id", label="ID"),
-        StringField("value", label="Значение"),
-        HasOne("product", label="Товар", identity="products"),
-        HasOne("characteristic_type", label="Тип характеристики", identity="characteristic-type")
+        StringField("value", label="Значение", required=True),
+        HasOne("product", label="Товар", identity="products", required=True),
+        HasOne("characteristic_type", label="Тип характеристики", identity="characteristic-type", required=True)
     ]
 
 
@@ -669,12 +635,12 @@ class ReviewAdmin(ModelView):
     
     fields = [
         StringField("id", label="ID"),
-        StringField("author_name", label="Имя автора"),
-        TextAreaField("content", label="Содержание"),
-        NumberField("rating", label="Рейтинг"),
-        StaticImageField("image", label="Изображение"),  # Используем кастомное поле для изображений
+        StringField("author_name", label="Имя автора", required=True),
+        TextAreaField("content", label="Содержание", required=True),
+        IntegerField("rating", label="Рейтинг", required=True),
+        StaticImageField("image", label="Изображение"),
         BooleanField("is_active", label="Активен"),
-        StringField("product", label="Товар")
+        HasOne("product", label="Товар", identity="products", required=True)
     ]
 
 
