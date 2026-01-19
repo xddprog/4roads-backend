@@ -169,3 +169,12 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# database dumps
+*.sql
+*.dump
+*.backup
+
+# uploaded / generated media
+static/images/products/
+static/
