@@ -23,11 +23,17 @@ from app.infrastructure.database.models.product import (
     ProductCharacteristic,
     CharacteristicType,
 )
+from app.infrastructure.database.models.review import Review
 from app.utils.enums import CharacteristicTypeEnum
 
 
 PAGE_RE = re.compile(r'page=(\d+)')
 PRICE_RE = re.compile(r'(\d[\d\s\xa0]+)\s*руб', re.IGNORECASE)
+DIMENSION_RE = re.compile(
+    r"(\d+(?:[.,]\d+)?)\s*см?\s*[xх×]\s*(\d+(?:[.,]\d+)?)\s*см?"
+    r"(?:\s*[xх×]\s*(\d+(?:[.,]\d+)?)\s*см?)?",
+    re.IGNORECASE,
+)
 
 COLOR_TOKENS = {
     "белый", "белый жемчужный", "бежевый", "бордовый", "васильковый",
@@ -66,6 +72,10 @@ class ProductPageParser(HTMLParser):
         self._desc_depth: int | None = None
         self._in_characteristics = False
         self._char_depth: int | None = None
+        self._in_gallery = False
+        self._gallery_depth: int | None = None
+        self._in_introtext = False
+        self._intro_depth: int | None = None
         self._current_option: str | None = None
         self._option_depth: int | None = None
         self._in_price = False
@@ -80,6 +90,7 @@ class ProductPageParser(HTMLParser):
         self.images: list[str] = []
         self.description_parts: list[str] = []
         self.characteristics_parts: list[str] = []
+        self.introtext_parts: list[str] = []
         self.price_text: str | None = None
         self.old_price_text: str | None = None
         self.size_value: str | None = None
@@ -103,6 +114,14 @@ class ProductPageParser(HTMLParser):
             self._in_characteristics = True
             self._char_depth = self._depth
 
+        if "product-gallery" in class_attr:
+            self._in_gallery = True
+            self._gallery_depth = self._depth
+
+        if "product-introtext" in class_attr:
+            self._in_introtext = True
+            self._intro_depth = self._depth
+
         if "option-razmer" in class_attr:
             self._current_option = "size"
             self._option_depth = self._depth
@@ -121,10 +140,11 @@ class ProductPageParser(HTMLParser):
         if tag == "a":
             self._current_anchor_href = attrs_dict.get("href")
 
-        for key in ("src", "data-src", "href"):
-            value = attrs_dict.get(key)
-            if value and "static.insales-cdn.com/images/products" in value:
-                self.images.append(value)
+        if self._in_gallery:
+            for key in ("src", "data-src", "href"):
+                value = attrs_dict.get(key)
+                if value and "static.insales-cdn.com/images/products" in value:
+                    self.images.append(value)
 
     def handle_endtag(self, tag: str) -> None:
         self._index += 1
@@ -145,6 +165,14 @@ class ProductPageParser(HTMLParser):
         if self._char_depth is not None and self._depth == self._char_depth:
             self._in_characteristics = False
             self._char_depth = None
+
+        if self._gallery_depth is not None and self._depth == self._gallery_depth:
+            self._in_gallery = False
+            self._gallery_depth = None
+
+        if self._intro_depth is not None and self._depth == self._intro_depth:
+            self._in_introtext = False
+            self._intro_depth = None
 
         if self._option_depth is not None and self._depth == self._option_depth:
             self._current_option = None
@@ -173,6 +201,8 @@ class ProductPageParser(HTMLParser):
             self.description_parts.append(text)
         if self._in_characteristics:
             self.characteristics_parts.append(text)
+        if self._in_introtext:
+            self.introtext_parts.append(text)
         if self._in_price and self.price_text is None:
             match = PRICE_RE.search(text)
             if match:
@@ -223,6 +253,121 @@ def normalize_whitespace(text: str) -> str:
     text = re.sub(r"[ \t\r\f\v]+", " ", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
+
+
+def normalize_color_token(token: str) -> str | None:
+    cleaned = normalize_whitespace(token).strip(",;").lower()
+    if not cleaned:
+        return None
+    if cleaned in {"в ассортименте", "ассорти", "ассортимент"}:
+        return None
+    if cleaned in COLOR_TOKENS:
+        return cleaned.capitalize()
+    return cleaned.capitalize()
+
+
+def extract_color_from_text(text: str) -> str | None:
+    match = re.search(
+        r"(?:доступные\s+цвета|цвета|цвет)\s*[:\-]\s*([^.\n]+)",
+        text,
+        re.IGNORECASE,
+    )
+    if not match:
+        return None
+    raw = match.group(1)
+    tokens = [t for t in re.split(r"[,/]", raw) if t.strip()]
+    colors = []
+    for token in tokens:
+        normalized = normalize_color_token(token)
+        if normalized:
+            colors.append(normalized)
+    if len(colors) == 1:
+        return colors[0]
+    return None
+
+
+def extract_material_from_text(text: str) -> str | None:
+    lowered = text.lower()
+    key_pos = lowered.find("материал")
+    if key_pos == -1:
+        return None
+    tail = text[key_pos + len("материал"):]
+    tail = tail.lstrip(" :.-")
+    if not tail:
+        return None
+    keywords = ["объём", "объем", "цвета", "цвет", "размеры", "размер", "доступные"]
+    end_positions = []
+    tail_lower = tail.lower()
+    for keyword in keywords:
+        pos = tail_lower.find(keyword)
+        if pos != -1:
+            end_positions.append(pos)
+    for sep in [".", "\n"]:
+        pos = tail.find(sep)
+        if pos != -1:
+            end_positions.append(pos)
+    end = min(end_positions) if end_positions else len(tail)
+    material = tail[:end].strip(" ,.-")
+    return material or None
+
+
+def extract_introtext_characteristics(text: str) -> dict[str, str]:
+    if not text:
+        return {}
+    text_norm = normalize_whitespace(text)
+    result: dict[str, str] = {}
+
+    size_match = re.search(r"Размер[:\s]*([0-9]+)\s*\"", text_norm, re.IGNORECASE)
+    if size_match:
+        result["Размер"] = f"{size_match.group(1)}\""
+
+    dim_match = DIMENSION_RE.search(text_norm)
+    if dim_match:
+        parts = [p for p in dim_match.groups() if p]
+        if parts:
+            size_value = "x".join(parts) + " см"
+            result.setdefault("Размер", size_value)
+
+    width = re.search(r"Ширина[:\s]*([0-9]+(?:[.,][0-9]+)?)\s*см", text_norm, re.IGNORECASE)
+    height = re.search(r"Высота[:\s]*([0-9]+(?:[.,][0-9]+)?)\s*см", text_norm, re.IGNORECASE)
+    depth = re.search(r"Глубина[:\s]*([0-9]+(?:[.,][0-9]+)?)\s*см", text_norm, re.IGNORECASE)
+    if width:
+        result["Ширина"] = f"{width.group(1)} см"
+    if height:
+        result["Высота"] = f"{height.group(1)} см"
+    if depth:
+        result["Глубина"] = f"{depth.group(1)} см"
+
+    if "Размер" not in result and width and height and depth:
+        result["Размер"] = f"{width.group(1)}x{height.group(1)}x{depth.group(1)} см"
+
+    weight = re.search(r"Вес[:\s]*([0-9]+(?:[.,][0-9]+)?)\s*(кг|г)?", text_norm, re.IGNORECASE)
+    if weight:
+        unit = weight.group(2) or "г"
+        result["Вес"] = f"{weight.group(1)} {unit}"
+
+    volume = re.search(r"Объ[её]м[:\s]*([0-9]+(?:[.,][0-9]+)?)\s*(мл|л)?", text_norm, re.IGNORECASE)
+    if volume:
+        unit = volume.group(2) or "мл"
+        result["Объём"] = f"{volume.group(1)} {unit}"
+
+    diameter = re.search(r"диаметр[^0-9]*([0-9]+(?:[.,][0-9]+)?)\s*см", text_norm, re.IGNORECASE)
+    if diameter:
+        result["Диаметр"] = f"{diameter.group(1)} см"
+
+    length = re.search(r"длина[:\s]*([0-9]+(?:[.,][0-9]+)?)\s*см", text_norm, re.IGNORECASE)
+    if length:
+        result["Длина"] = f"{length.group(1)} см"
+
+    material = extract_material_from_text(text_norm)
+    if material:
+        result.setdefault("Материал", material)
+
+    color = extract_color_from_text(text_norm)
+    if color:
+        result.setdefault("Цвет", color)
+
+    return result
 
 
 def extract_description(text: str) -> str | None:
@@ -318,7 +463,9 @@ def extract_size_from_name(name: str | None) -> str | None:
     match = re.search(r"\(([^)]+)\)", name)
     if match:
         raw = match.group(1).strip()
-        return raw
+        if re.search(r"\d", raw) or re.fullmatch(r"[SML]", raw, re.IGNORECASE):
+            return raw
+        return None
     return None
 
 
@@ -326,10 +473,12 @@ def normalize_size(value: str | None) -> str | None:
     if not value:
         return None
     value = value.strip()
+    if re.search(r"[xх×]|см|мм|\"", value, re.IGNORECASE):
+        return normalize_whitespace(value)
     match = re.search(r"\b([SML])\b", value, re.IGNORECASE)
     if match:
         return match.group(1).upper()
-    match = re.search(r"(\d{2})", value)
+    match = re.fullmatch(r"(\d{2})\s*\"?", value)
     if match:
         return match.group(1)
     return value
@@ -366,8 +515,14 @@ def extract_color_from_name(name: str | None) -> str | None:
     return None
 
 
-def extract_characteristics(tokens: list[str], text: str, name: str | None) -> dict[str, str]:
+def extract_characteristics(
+    tokens: list[str],
+    text: str,
+    name: str | None,
+    introtext: str | None,
+) -> dict[str, str]:
     text_norm = normalize_whitespace(text)
+    intro_data = extract_introtext_characteristics(introtext or "")
     size = find_label_value(tokens, "Размер")
     color = find_label_value(tokens, "Цвет")
     material = None
@@ -375,19 +530,25 @@ def extract_characteristics(tokens: list[str], text: str, name: str | None) -> d
     material_match = re.search(r"Материал[:\s]+([^\n]+)", text_norm, re.IGNORECASE)
     if material_match:
         material = material_match.group(1).strip()
+    if not material:
+        material = intro_data.get("Материал") or extract_material_from_text(text_norm)
 
     if not size:
-        size = extract_size_from_name(name)
+        size = intro_data.get("Размер") or extract_size_from_name(name)
     size = normalize_size(size)
 
     if not color:
-        color = extract_color_from_name(name)
+        color = intro_data.get("Цвет") or extract_color_from_name(name) or extract_color_from_text(text_norm)
     if color:
         color = color.strip().capitalize()
 
     material = normalize_material(material)
 
     result: dict[str, str] = {}
+    for key, value in intro_data.items():
+        if key in {"Размер", "Материал", "Цвет"}:
+            continue
+        result[key] = value
     if size:
         result["Размер"] = size
     if material:
@@ -421,17 +582,32 @@ def parse_product_page(html: str, url: str) -> dict:
 
     category_name, category_slug = extract_category(parser.anchors, h1_index)
 
+    introtext = None
+    if parser.introtext_parts:
+        introtext = normalize_whitespace(" ".join(parser.introtext_parts))
+
     images = []
     seen = set()
+    large_links: list[str] = []
+    fallback_links: list[str] = []
     for link in parser.images:
+        path = urlparse(link).path
+        filename = Path(path).name.lower()
+        if filename.startswith("large_"):
+            large_links.append(link)
+        else:
+            fallback_links.append(link)
+
+    selected_links = large_links or fallback_links
+    for link in selected_links:
         if link not in seen:
             seen.add(link)
             images.append(link)
 
     slug = urlparse(url).path.rstrip("/").split("/")[-1]
     tokens = [text for _idx, text in parser.tokens]
-    characteristics = extract_characteristics(tokens, text_after_h1, name)
-    if parser.size_value:
+    characteristics = extract_characteristics(tokens, text_after_h1, name, introtext)
+    if parser.size_value and "Размер" not in characteristics:
         characteristics["Размер"] = normalize_size(parser.size_value)
     if parser.color_value:
         characteristics["Цвет"] = parser.color_value.strip().capitalize()
@@ -568,6 +744,13 @@ def upsert_characteristics(session, product: Product, characteristics: dict[str,
         return
     mapping = {
         "Размер": CharacteristicTypeEnum.SIZE,
+        "Ширина": CharacteristicTypeEnum.WIDTH,
+        "Высота": CharacteristicTypeEnum.HEIGHT,
+        "Глубина": CharacteristicTypeEnum.DEPTH,
+        "Вес": CharacteristicTypeEnum.WEIGHT,
+        "Диаметр": CharacteristicTypeEnum.DIAMETER,
+        "Длина": CharacteristicTypeEnum.LENGTH,
+        "Объём": CharacteristicTypeEnum.VOLUME,
         "Материал": CharacteristicTypeEnum.MATERIAL,
         "Цвет": CharacteristicTypeEnum.COLOR,
     }
@@ -633,11 +816,25 @@ def import_products(
     update_existing: bool,
     dry_run: bool,
     refresh_images: bool,
+    reset_catalog: bool,
 ) -> None:
     fallback_slug = parse_collection_slug(collection_url) or "vse-kollektsii"
     fallback_name = "Все товары" if fallback_slug == "vse-kollektsii" else None
 
     with sync_session_maker() as session:
+        if reset_catalog:
+            if dry_run:
+                print("[reset] dry-run: skip catalog reset")
+            else:
+                session.execute(delete(ProductImage))
+                session.execute(delete(ProductCharacteristic))
+                session.execute(delete(Review))
+                session.execute(delete(Product))
+                session.execute(delete(Category))
+                session.execute(delete(CharacteristicType))
+                session.commit()
+                print("[reset] catalog cleared")
+
         for index, data in enumerate(products, start=1):
             category = get_or_create_category(session, data.get("category_name"), data.get("category_slug"))
             if category is None:
@@ -720,6 +917,11 @@ def main() -> None:
     )
     parser.add_argument("--dry-run", action="store_true", help="Parse without DB writes")
     parser.add_argument("--refresh-images", action="store_true", help="Replace images on update")
+    parser.add_argument(
+        "--reset-catalog",
+        action="store_true",
+        help="Delete products and related data before import",
+    )
     parser.add_argument("--json-path", default="data/4roads_products.json", help="Path for export/import JSON")
     parser.add_argument("--export-json", action="store_true", help="Export scraped data to JSON")
     parser.add_argument("--import-json", action="store_true", help="Import from JSON instead of scraping")
@@ -747,6 +949,7 @@ def main() -> None:
             update_existing=not args.skip_existing,
             dry_run=args.dry_run,
             refresh_images=args.refresh_images,
+            reset_catalog=args.reset_catalog,
         )
 
 

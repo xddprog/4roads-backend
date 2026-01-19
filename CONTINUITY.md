@@ -1,27 +1,32 @@
 - Goal (критерии успеха):
-  - Починить деплой (Postgres auth) и корректные https-ссылки на статику админки на 4roads.su.
+  - Проверить парсинг в `app/utils/import_4roads_full.py` на реальных страницах 4roads, убрать дубли фото (large-first с fallback) и добавить гибкий парсинг introtext.
 - Constraints/Assumptions:
   - В начале каждого хода читать и обновлять `CONTINUITY.md`.
   - Нет сетевого доступа из shell без аппрува.
-  - Доступ к конфигу Nginx есть, приведен текущий файл `/etc/nginx/sites-enabled/4roads.su`.
 - Key decisions:
-  - UNCONFIRMED: Нужен отдельный location для статики админки (`/admin/static/`) и корректный `alias` на STATIC_ROOT.
+  - UNCONFIRMED: Что именно подразумевается под "дефолтные данные от админки" (модельные дефолты, формы админки или значения при импорте).
 - State:
   - Done:
-    - Прочитан текущий `CONTINUITY.md`.
-    - Получен текущий Nginx конфиг для `4roads.su`.
-    - Проверка `curl -I` показала 404 для `https://4roads.su/admin/statics/main.css` и `https://4roads.su/static/anything.css`.
-    - Пользователь подтвердил неверный `STATIC_URL` (http вместо https) в `.env`.
-    - Пользователь показал prod `.env` с `DB_PASS=postgres` и `STATIC_URL=https://4roads.su/static`.
-    - Пользователь указал, что админка запрашивает статику по http (например `http://4roads.su/admin/statics/...`).
-    - Найден `docker-compose.yml`: app запускает uvicorn без `--proxy-headers` и переопределяет `STATIC_URL` на `http://localhost:8000/static`.
+    - Прочитан `CONTINUITY.md`.
+    - Просмотрен `app/utils/import_4roads_full.py`.
+    - Просмотрен `app/infrastructure/database/models/product.py`.
+    - Просмотрен `admin/admin.py` (раздел Product).
+    - Проверены страницы 4roads через web/Playwright (коллекция и товар).
+    - Добавлен фильтр только на `large_` изображения.
+    - Ограничен сбор картинок только внутри `product-gallery`, чтобы не брать похожие товары.
+    - Добавлен fallback: если `large_` нет, берутся обычные изображения.
+    - Добавлены enum-ы характеристик для размеров/веса/объёма.
+    - Добавлен парсинг `product-introtext` и гибкое извлечение характеристик.
+    - Размер из опций теперь заполняется только если отсутствует, чтобы не затирать подробные размеры.
+    - Добавлен флаг `--reset-catalog` для полной очистки каталога перед импортом (включая типы характеристик).
   - Now:
-    - Исправить генерацию http URL в админке (вероятно не учитывается `X-Forwarded-Proto`).
+    - Проверить корректность изменений и сформировать выводы по качеству парсинга.
   - Next:
-    - Проверить прокси-настройки uvicorn/Starlette (proxy headers) и при необходимости добавить middleware.
-    - Вернуться к теме Postgres auth, если все еще актуально.
+    - Уточнить, какие "дефолтные данные от админки" нужны пользователю.
 - Open questions (UNCONFIRMED если нужно):
-  - Как запускается приложение в проде (команда uvicorn/гунicorn) и есть ли флаги `--proxy-headers`?
+  - Что именно считать "дефолтными данными от админки": значения полей в моделях, дефолты форм админки или начальные значения при импорте?
 - Working set (files/ids/commands):
   - `CONTINUITY.md`
-  - `/etc/nginx/sites-enabled/4roads.su` (from user)
+  - `app/utils/import_4roads_full.py`
+  - `app/infrastructure/database/models/product.py`
+  - `admin/admin.py`

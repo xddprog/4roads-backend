@@ -52,6 +52,13 @@ async def init_characteristic_types(session: AsyncSession) -> None:
     
     characteristic_types = [
         CharacteristicType(name=CharacteristicTypeEnum.SIZE.value, slug="size"),
+        CharacteristicType(name=CharacteristicTypeEnum.WIDTH.value, slug="width"),
+        CharacteristicType(name=CharacteristicTypeEnum.HEIGHT.value, slug="height"),
+        CharacteristicType(name=CharacteristicTypeEnum.DEPTH.value, slug="depth"),
+        CharacteristicType(name=CharacteristicTypeEnum.WEIGHT.value, slug="weight"),
+        CharacteristicType(name=CharacteristicTypeEnum.DIAMETER.value, slug="diameter"),
+        CharacteristicType(name=CharacteristicTypeEnum.LENGTH.value, slug="length"),
+        CharacteristicType(name=CharacteristicTypeEnum.VOLUME.value, slug="volume"),
         CharacteristicType(name=CharacteristicTypeEnum.MATERIAL.value, slug="material"),
         CharacteristicType(name=CharacteristicTypeEnum.COLOR.value, slug="color"),
     ]
