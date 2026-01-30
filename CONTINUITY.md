@@ -1,5 +1,5 @@
 - Goal (критерии успеха):
-  - Интегрировать отправку письма о новой заявке, используя SMTP настройки и email из записи Settings; ошибки не должны блокировать поток.
+  - Сделать интуитивный UI в админке для заполнения рабочих часов (work_hours).
 - Constraints/Assumptions:
   - В начале каждого хода читать и обновлять `CONTINUITY.md`.
   - Нет сетевого доступа из shell без аппрува.
@@ -13,10 +13,12 @@
     - SMTP-настройки перенесены в ENV (конфиг); SMTP-поля удалены из модели/DTO/админки и миграция убрана.
     - Добавлены логи успешной отправки и пропуска из-за отсутствия SMTP.
     - Добавлена зависимость `aiosmtplib`.
+    - Добавлен парсер `work_hours` из строкового JSON, чтобы избежать 500 при строковом формате.
+    - Добавлен кастомный WorkHoursField с отдельными time-полями в админке и шаблон формы.
   - Now:
-    - Сообщить о внесённых изменениях и шагах по заполнению ENV.
+    - Сообщить о новом UI для work_hours и необходимости перезапуска.
   - Next:
-    - Заполнить SMTP-настройки в `.env` и протестировать.
+    - Проверить форму в админке и корректное сохранение JSON.
 - Open questions (UNCONFIRMED если нужно):
   - Нужен ли отдельный адрес получателя, отличный от `settings.email`?
 - Working set (files/ids/commands):
@@ -27,5 +29,6 @@
   - `app/infrastructure/database/models/settings.py`
   - `app/core/dto/settings.py`
   - `admin/admin.py`
+  - `admin/templates/forms/work_hours.html`
   - `app/infrastructure/config/config.py`
   - `requirements.txt`

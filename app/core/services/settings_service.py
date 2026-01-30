@@ -14,5 +14,7 @@ class SettingsService:
             raise NotFoundError("Настройки сайта не найдены")
 
         settings = settings[0]
-        return SettingsModel.model_validate(settings, from_attributes=True)
-
+        try:
+            return SettingsModel.model_validate(settings, from_attributes=True)
+        except Exception as exc:
+            raise InternalServerError(f"Ошибка в настройках сайта: {exc}") from exc

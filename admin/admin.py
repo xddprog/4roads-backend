@@ -210,6 +210,47 @@ class ProductImagesListField(BaseImageField):
         return (existing_images, False)
 
 
+@dataclass
+class WorkHoursField(BaseField):
+    form_template: str = "forms/work_hours.html"
+
+    async def parse_form_data(
+        self, request: Request, form_data: FormData, action: RequestAction
+    ) -> dict | None:
+        def get_value(suffix: str) -> str | None:
+            value = form_data.get(f"{self.id}_{suffix}")
+            if value is None:
+                return None
+            value = value.strip()
+            return value or None
+
+        weekdays_start = get_value("weekdays_start")
+        weekdays_end = get_value("weekdays_end")
+        weekend_start = get_value("weekend_start")
+        weekend_end = get_value("weekend_end")
+        note = get_value("note")
+
+        payload: dict[str, Any] = {}
+        if weekdays_start or weekdays_end:
+            payload["weekdays"] = {"start": weekdays_start, "end": weekdays_end}
+        if weekend_start or weekend_end:
+            payload["weekend"] = {"start": weekend_start, "end": weekend_end}
+        if note:
+            payload["note"] = note
+
+        return payload or None
+
+    async def serialize_value(
+        self, request: Request, value: Any, action: RequestAction
+    ) -> dict | None:
+        if isinstance(value, str):
+            try:
+                return json.loads(value)
+            except Exception:
+                return None
+        return value
+
+
 # -----------------------------------------------------------
 # CATEGORY
 # -----------------------------------------------------------
@@ -661,7 +702,7 @@ class SettingsAdmin(ModelView):
         StringField("whatsapp_url", label="WhatsApp URL"),
         StringField("youtube_url", label="YouTube URL"),
         StringField("about_text", label="О нас"),
-        StringField("work_hours", label="Время работы")
+        WorkHoursField("work_hours", label="Время работы")
     ]
 
 
@@ -754,6 +795,7 @@ def create_admin(engine):
         route_name="admin",
         i18n_config=i18n_config,
         auth_provider=auth_provider,
+        templates_dir="admin/templates",
         middlewares=[],  # Middleware будет добавлен через mount_to
         debug=True,
     )

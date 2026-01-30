@@ -1,4 +1,6 @@
-from pydantic import BaseModel, ConfigDict
+import json
+
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class TimeRange(BaseModel):
@@ -23,3 +25,18 @@ class SettingsModel(BaseModel):
     youtube_url: str | None = None
     about_text: str | None = None
     work_hours: WorkHoursData | None = None
+
+    @field_validator("work_hours", mode="before")
+    @classmethod
+    def parse_work_hours(cls, value):
+        if value is None:
+            return None
+        if isinstance(value, str):
+            text = value.strip()
+            if not text:
+                return None
+            try:
+                return json.loads(text)
+            except Exception:
+                return None
+        return value

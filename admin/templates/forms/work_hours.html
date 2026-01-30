@@ -1,0 +1,79 @@
+{% set wh = data if data is mapping else {} %}
+{% set weekdays = wh.get("weekdays", {}) %}
+{% set weekend = wh.get("weekend", {}) %}
+<div class="form-group mb-3{% if error %} is-invalid{% endif %}">
+  <label class="form-label">{{ field.label }}</label>
+  <div class="row g-2">
+    <div class="col-12 col-md-6">
+      <div class="border rounded p-2">
+        <div class="fw-semibold mb-2">Будни</div>
+        <div class="row g-2">
+          <div class="col-6">
+            <label class="form-label small text-muted">Начало</label>
+            <input
+              type="time"
+              class="form-control"
+              id="{{ field.id }}_weekdays_start"
+              name="{{ field.id }}_weekdays_start"
+              value="{{ weekdays.get('start', '') }}"
+            />
+          </div>
+          <div class="col-6">
+            <label class="form-label small text-muted">Конец</label>
+            <input
+              type="time"
+              class="form-control"
+              id="{{ field.id }}_weekdays_end"
+              name="{{ field.id }}_weekdays_end"
+              value="{{ weekdays.get('end', '') }}"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-6">
+      <div class="border rounded p-2">
+        <div class="fw-semibold mb-2">Выходные</div>
+        <div class="row g-2">
+          <div class="col-6">
+            <label class="form-label small text-muted">Начало</label>
+            <input
+              type="time"
+              class="form-control"
+              id="{{ field.id }}_weekend_start"
+              name="{{ field.id }}_weekend_start"
+              value="{{ weekend.get('start', '') }}"
+            />
+          </div>
+          <div class="col-6">
+            <label class="form-label small text-muted">Конец</label>
+            <input
+              type="time"
+              class="form-control"
+              id="{{ field.id }}_weekend_end"
+              name="{{ field.id }}_weekend_end"
+              value="{{ weekend.get('end', '') }}"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mt-2">
+    <label class="form-label small text-muted">Примечание</label>
+    <input
+      type="text"
+      class="form-control"
+      id="{{ field.id }}_note"
+      name="{{ field.id }}_note"
+      value="{{ wh.get('note', '') }}"
+      placeholder="Например: Без перерыва"
+    />
+  </div>
+  {% if field.help_text %}
+  <small class="form-hint">{{ field.help_text }}</small>
+  {% endif %}
+</div>
+{% if error %}
+<div class="invalid-feedback">{{ error }}</div>
+{% endif %}
