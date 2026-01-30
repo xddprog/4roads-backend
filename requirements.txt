@@ -18,3 +18,4 @@ python-slugify
 starlette_admin
 babel
 itsdangerous
+aiosmtplib

@@ -23,4 +23,3 @@ class SettingsModel(BaseModel):
     youtube_url: str | None = None
     about_text: str | None = None
     work_hours: WorkHoursData | None = None
-

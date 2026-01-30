@@ -30,7 +30,8 @@ async def get_settings_service(session=Depends(get_db_session)) -> services.Sett
 
 async def get_contact_form_service(session=Depends(get_db_session)) -> services.ContactFormService:
     return services.ContactFormService(
-        repository=repositories.ContactFormRepository(session=session)
+        repository=repositories.ContactFormRepository(session=session),
+        settings_repository=repositories.SettingsRepository(session=session)
     )
 
 

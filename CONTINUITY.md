@@ -1,20 +1,31 @@
 - Goal (критерии успеха):
-  - Обновить `.gitignore`: игнорировать дампы БД и статику/медиа продуктов.
+  - Интегрировать отправку письма о новой заявке, используя SMTP настройки и email из записи Settings; ошибки не должны блокировать поток.
 - Constraints/Assumptions:
   - В начале каждого хода читать и обновлять `CONTINUITY.md`.
   - Нет сетевого доступа из shell без аппрува.
 - Key decisions:
-  - UNCONFIRMED: Что именно подразумевается под "дефолтные данные от админки" (модельные дефолты, формы админки или значения при импорте).
+  - Уведомления отправляются в фоне; SMTP-данные берутся из ENV, email получателя — из таблицы settings.
 - State:
   - Done:
     - Прочитан `CONTINUITY.md`.
-    - Обновлён `.gitignore` для дампов БД и статики.
+    - Найдено: заявки = `contact_form` (API `/contact`, модель `ContactForm`, админка "Контакты"); отправки email не было.
+    - Добавлен email sender и фоновая отправка уведомления при создании заявки.
+    - SMTP-настройки перенесены в ENV (конфиг); SMTP-поля удалены из модели/DTO/админки и миграция убрана.
+    - Добавлены логи успешной отправки и пропуска из-за отсутствия SMTP.
+    - Добавлена зависимость `aiosmtplib`.
   - Now:
-    - Проверить, нужно ли игнорировать дополнительные пути статики.
+    - Сообщить о внесённых изменениях и шагах по заполнению ENV.
   - Next:
-    - Убедиться, что нужные пути не отслеживаются git.
+    - Заполнить SMTP-настройки в `.env` и протестировать.
 - Open questions (UNCONFIRMED если нужно):
-  - Нужны ли дополнительные пути статики, кроме `static/images/products/`?
+  - Нужен ли отдельный адрес получателя, отличный от `settings.email`?
 - Working set (files/ids/commands):
   - `CONTINUITY.md`
-  - `.gitignore`
+  - `app/api/v1/routers/contact_form.py`
+  - `app/core/services/contact_form_service.py`
+  - `app/infrastructure/email/sender.py`
+  - `app/infrastructure/database/models/settings.py`
+  - `app/core/dto/settings.py`
+  - `admin/admin.py`
+  - `app/infrastructure/config/config.py`
+  - `requirements.txt`

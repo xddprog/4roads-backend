@@ -62,6 +62,14 @@ class AppConfig(Config):
     ADMIN_USERNAME: str = Field(default="admin")
     ADMIN_PASSWORD: str = Field(default="admin123")
 
+    # SMTP
+    SMTP_HOST: str | None = None
+    SMTP_PORT: int | None = None
+    SMTP_USER: str | None = None
+    SMTP_PASS: str | None = None
+    SMTP_USE_TLS: bool = Field(default=True)
+    SMTP_FROM: str | None = None
+
 
 class Settings(Config):
     

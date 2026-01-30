@@ -23,5 +23,6 @@ class Settings(Base):
     # Время работы (JSON: {"weekdays": {"start": "09:00", "end": "18:00"}, "weekend": {...}, "note": "..."})
     work_hours: Mapped[dict | None] = mapped_column(JSON)
 
+
     def __repr__(self):
         return f"<Settings(id={self.id}, phone='{self.phone}', email='{self.email}')>"

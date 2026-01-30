@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, BackgroundTasks, Depends, status
 
 from app.api.v1.dependencies import get_contact_form_service
 from app.core.dto.contact_form import ContactFormCreateModel, ContactFormModel
@@ -19,6 +19,7 @@ router = APIRouter()
 )
 async def create_contact_form(
     data: ContactFormCreateModel,
+    background_tasks: BackgroundTasks,
     service: Annotated[ContactFormService, Depends(get_contact_form_service)]
 ) -> ContactFormModel:
-    return await service.create_contact_form(data)
+    return await service.create_contact_form(data, background_tasks=background_tasks)
