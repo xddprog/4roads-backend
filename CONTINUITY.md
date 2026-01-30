@@ -1,5 +1,5 @@
 - Goal (критерии успеха):
-  - Сделать интуитивный UI в админке для заполнения рабочих часов (work_hours).
+  - Внедрить корзину без авторизации, страницу заказов в админке, оформление заказа как заявки с контактными данными и email-уведомлением с HTML-шаблоном.
 - Constraints/Assumptions:
   - В начале каждого хода читать и обновлять `CONTINUITY.md`.
   - Нет сетевого доступа из shell без аппрува.
@@ -8,27 +8,33 @@
 - State:
   - Done:
     - Прочитан `CONTINUITY.md`.
-    - Найдено: заявки = `contact_form` (API `/contact`, модель `ContactForm`, админка "Контакты"); отправки email не было.
-    - Добавлен email sender и фоновая отправка уведомления при создании заявки.
-    - SMTP-настройки перенесены в ENV (конфиг); SMTP-поля удалены из модели/DTO/админки и миграция убрана.
-    - Добавлены логи успешной отправки и пропуска из-за отсутствия SMTP.
-    - Добавлена зависимость `aiosmtplib`.
-    - Добавлен парсер `work_hours` из строкового JSON, чтобы избежать 500 при строковом формате.
-    - Добавлен кастомный WorkHoursField с отдельными time-полями в админке и шаблон формы.
+    - Добавлены модели Order/OrderItem, DTO, сервис, репозиторий и API `/api/v1/order`.
+    - Добавлены админ-страницы заказов и позиций заказов.
+    - Добавлено HTML-письмо и отправка email по заказу.
+    - Добавлена миграция для таблиц orders/order_items.
+    - Добавлен API корзины на cookie-based session (`/api/v1/cart`) и checkout из корзины.
+    - Удалено поле адреса из заказа (модель/DTO/админка/email) и добавлена миграция.
+    - Добавлена спека интеграции API корзины/checkout в `docs/`.
   - Now:
-    - Сообщить о новом UI для work_hours и необходимости перезапуска.
+    - Уточнить требования к cookie параметрам сессии для фронтенда.
   - Next:
-    - Проверить форму в админке и корректное сохранение JSON.
+    - При необходимости настроить параметры SessionMiddleware (cookie name/age/samesite/secure).
 - Open questions (UNCONFIRMED если нужно):
-  - Нужен ли отдельный адрес получателя, отличный от `settings.email`?
+  - Оставляем корзину в cookies через SessionMiddleware или нужен отдельный backend storage?
+  - Какие поля нужны в заказе (email/комментарий/доставка/оплата)?
+  - Email получателя: `settings.email` или отдельный адрес?
 - Working set (files/ids/commands):
   - `CONTINUITY.md`
-  - `app/api/v1/routers/contact_form.py`
-  - `app/core/services/contact_form_service.py`
+  - `app/infrastructure/database/models/order.py`
+  - `app/core/dto/order.py`
+  - `app/core/services/order_service.py`
+  - `app/core/repositories/order_repository.py`
+  - `app/api/v1/routers/order.py`
+  - `app/api/v1/routers/cart.py`
+  - `app/core/dto/cart.py`
   - `app/infrastructure/email/sender.py`
-  - `app/infrastructure/database/models/settings.py`
-  - `app/core/dto/settings.py`
+  - `app/infrastructure/email/templates/order_notification.html`
   - `admin/admin.py`
-  - `admin/templates/forms/work_hours.html`
-  - `app/infrastructure/config/config.py`
-  - `requirements.txt`
+  - `migrations/versions/5f3a2e9f1a2b_add_orders.py`
+  - `migrations/versions/7a2b9d1c3f4e_drop_order_address.py`
+  - `docs/cart_checkout_api.md`

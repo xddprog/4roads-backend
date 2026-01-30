@@ -64,3 +64,11 @@ async def get_category_service(session=Depends(get_db_session)) -> services.Cate
     return services.CategoryService(
         repository=repositories.CategoryRepository(session=session)
     )
+
+
+async def get_order_service(session=Depends(get_db_session)) -> services.OrderService:
+    return services.OrderService(
+        repository=repositories.OrderRepository(session=session),
+        product_repository=repositories.ProductRepository(session=session),
+        settings_repository=repositories.SettingsRepository(session=session),
+    )

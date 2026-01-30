@@ -5,6 +5,7 @@ from .review import Review
 from .faq import FAQ
 from .settings import Settings
 from .contact_form import ContactForm
+from .order import Order, OrderItem
 
 
 __all__ = [
@@ -18,4 +19,6 @@ __all__ = [
     "FAQ",
     "Settings",
     "ContactForm",
+    "Order",
+    "OrderItem",
 ]

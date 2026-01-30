@@ -11,3 +11,10 @@ class CharacteristicTypeEnum(str, Enum):
     VOLUME = "Объём"
     MATERIAL = "Материал"
     COLOR = "Цвет"
+
+
+class OrderStatusEnum(str, Enum):
+    NEW = "Новая"
+    IN_PROGRESS = "В работе"
+    DONE = "Завершена"
+    CANCELED = "Отменена"

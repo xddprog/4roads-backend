@@ -87,6 +87,21 @@ class ProductRepository(SqlAlchemyRepository[Product]):
         )
         result = await self.session.execute(query)
         return result.scalars().one_or_none()
+
+    async def get_by_ids(
+        self,
+        ids: list[UUID],
+        only_active: bool = True,
+    ) -> list[Product]:
+        if not ids:
+            return []
+
+        query = select(Product).where(Product.id.in_(ids))
+        if only_active:
+            query = query.where(Product.is_active == True)
+
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
     
     async def get_for_home(
         self,

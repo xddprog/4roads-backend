@@ -5,3 +5,4 @@ from app.core.repositories.product_repository import ProductRepository
 from app.core.repositories.review_repository import ReviewRepository
 from app.core.repositories.characteristic_repository import CharacteristicTypeRepository
 from app.core.repositories.category_repository import CategoryRepository
+from app.core.repositories.order_repository import OrderRepository

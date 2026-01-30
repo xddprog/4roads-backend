@@ -6,3 +6,4 @@ from app.core.services.product_service import ProductService
 from app.core.services.review_service import ReviewService
 from app.core.services.filter_service import FilterService
 from app.core.services.category_service import CategoryService
+from app.core.services.order_service import OrderService

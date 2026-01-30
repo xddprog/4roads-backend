@@ -26,6 +26,7 @@ from app.infrastructure.config.config import APP_CONFIG
 from app.infrastructure.database.models.category import Category
 from app.infrastructure.database.models.contact_form import ContactForm
 from app.infrastructure.database.models.faq import FAQ
+from app.infrastructure.database.models.order import Order, OrderItem
 from app.infrastructure.database.models.product import (
     Product,
     ProductImage,
@@ -38,6 +39,7 @@ from app.infrastructure.database.adapters.sync_connection import sync_engine
 from app.infrastructure.logging.logger import get_logger
 
 from app.utils.enums import CharacteristicTypeEnum
+from app.utils.enums import OrderStatusEnum
 
 Session = sessionmaker(bind=sync_engine)
 
@@ -599,6 +601,47 @@ class ContactFormAdmin(ModelView):
 
 
 # -----------------------------------------------------------
+# ORDERS
+# -----------------------------------------------------------
+class OrderAdmin(ModelView):
+    label = "Заказ"
+    label_plural = "Заказы"
+
+    can_create = False
+
+    fields = [
+        StringField("id", label="ID"),
+        StringField("created_at", label="Дата"),
+        StringField("name", label="Имя", required=True),
+        StringField("phone", label="Телефон", required=True),
+        StringField("email", label="Email"),
+        TextAreaField("comment", label="Комментарий"),
+        EnumField("status", label="Статус", choices=[(i, i.value) for i in OrderStatusEnum]),
+        IntegerField("total_amount", label="Сумма"),
+        HasMany("items", label="Позиции заказа", identity="order-items"),
+    ]
+
+
+class OrderItemAdmin(ModelView):
+    label = "Позиция заказа"
+    label_plural = "Позиции заказа"
+
+    can_create = False
+    can_delete = False
+    can_edit = False
+
+    fields = [
+        StringField("id", label="ID"),
+        HasOne("order", label="Заказ", identity="orders", required=True),
+        HasOne("product", label="Товар", identity="products"),
+        StringField("product_name", label="Название товара"),
+        IntegerField("unit_price", label="Цена"),
+        IntegerField("quantity", label="Количество"),
+        IntegerField("total_price", label="Сумма"),
+    ]
+
+
+# -----------------------------------------------------------
 # FAQ
 # -----------------------------------------------------------
 class FAQAdmin(ModelView):
@@ -802,6 +845,8 @@ def create_admin(engine):
 
     admin.add_view(CategoryAdmin(Category, identity="category"))
     admin.add_view(ContactFormAdmin(ContactForm))
+    admin.add_view(OrderAdmin(Order, identity="orders"))
+    admin.add_view(OrderItemAdmin(OrderItem, identity="order-items"))
     admin.add_view(FAQAdmin(FAQ))
     admin.add_view(ProductAdmin(Product, identity="products"))
     admin.add_view(ProductImageAdmin(ProductImage))
